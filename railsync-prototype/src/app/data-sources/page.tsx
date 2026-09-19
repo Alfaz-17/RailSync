@@ -17,8 +17,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; style?: 
 
 const deptColorMap: Record<string, string> = {
   Engineering: '#245F8E',
-  Signal: '#D97706',
-  Traction: '#6D4AFF',
+  Signal: '#946016',
+  Traction: '#14736D',
 };
 
 export default function DataSourcesPage() {
@@ -26,7 +26,7 @@ export default function DataSourcesPage() {
     <div>
       <Topbar title="Data sources" description="Sample inputs used by the planner." />
 
-      <div className="p-6 max-w-[1440px] mx-auto space-y-6">
+      <div className="page-content space-y-6">
         <section className="page-intro"><div><div className="eyebrow">Planning inputs</div><h2>Start with the right information.</h2><p>Tasks, train times, crews, and available work slots help build a shared plan. Open a source to see its sample records.</p></div><span className="demo-label">Sample data</span></section>
 
         {/* Source Cards */}
@@ -42,7 +42,7 @@ export default function DataSourcesPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Card className="border-slate-200 hover:shadow-md transition-shadow h-full">
+                <Card className="border-slate-200 hover:border-slate-300 transition-shadow h-full">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <div
@@ -53,7 +53,7 @@ export default function DataSourcesPage() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                        <span className="text-xs text-green-600 font-medium">{source.status}</span>
+                        <span className="text-xs text-green-800 font-medium">{source.status}</span>
                       </div>
                     </div>
                     <CardTitle className="text-sm font-semibold text-[#0F172A] mt-2 leading-tight">
@@ -70,15 +70,15 @@ export default function DataSourcesPage() {
                         {source.department}
                       </Badge>
                     )}
-                    <p className="text-xs text-[#64748B] leading-relaxed">
+                    <p className="text-xs text-[#526175] leading-relaxed">
                       {source.description}
                     </p>
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-lg font-bold text-[#0F172A]">{source.recordCount}</span>
-                        <span className="text-xs text-[#64748B] ml-1.5">{source.recordUnit}</span>
+                        <span className="text-xs text-[#526175] ml-1.5">{source.recordUnit}</span>
                       </div>
-                      <Badge className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50">
+                      <Badge className="text-xs bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50">
                         Sample data
                       </Badge>
                     </div>
@@ -95,7 +95,7 @@ export default function DataSourcesPage() {
                             <SheetTitle className="text-base">{source.name} — Sample Data</SheetTitle>
                           </SheetHeader>
                           <div className="mt-4 space-y-3">
-                            <Badge className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50">
+                            <Badge className="text-xs bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50">
                               Sample data
                             </Badge>
                             <div className="border rounded-lg overflow-x-auto mt-3">
@@ -113,7 +113,7 @@ export default function DataSourcesPage() {
                                   {source.sampleData.map((row, ri) => (
                                     <tr key={ri} className="border-t">
                                       {Object.values(row).map((val, ci) => (
-                                        <td key={ci} className="px-3 py-2 text-[#64748B]">
+                                        <td key={ci} className="px-3 py-2 text-[#526175]">
                                           {String(val)}
                                         </td>
                                       ))}

@@ -4,16 +4,17 @@ import { Topbar } from '@/components/app-shell/topbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fragmentedBlocks, baselineMetrics } from '@/data/current-plan';
+import { fragmentedBlocks } from '@/data/current-plan';
 import { Department } from '@/types/domain';
+import { summarizeBlocks } from '@/lib/plan-summary';
 import { ArrowRight, AlertCircle, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const deptColors: Record<Department, { bg: string; border: string; text: string }> = {
   Engineering: { bg: '#245F8E15', border: '#245F8E40', text: '#245F8E' },
-  Signal: { bg: '#D9770615', border: '#D9770640', text: '#D97706' },
-  Traction: { bg: '#6D4AFF15', border: '#6D4AFF40', text: '#6D4AFF' },
+  Signal: { bg: '#94601615', border: '#94601640', text: '#946016' },
+  Traction: { bg: '#14736D15', border: '#14736D40', text: '#14736D' },
 };
 
 const departments: Department[] = ['Engineering', 'Signal', 'Traction'];
@@ -28,26 +29,27 @@ function timeToPercent(time: string): number {
 }
 
 export default function CurrentPlanPage() {
+  const summary = summarizeBlocks(fragmentedBlocks.map(block => ({ ...block, taskIds: [block.taskId], departments: [block.department] })));
   return (
     <div>
       <Topbar title="Current plan" description="See the separate work times for each department." />
 
-      <div className="p-6 max-w-[1440px] mx-auto space-y-6">
+      <div className="page-content space-y-6">
         <section className="page-intro"><div><div className="eyebrow">Before shared planning</div><h2>Separate plans can mean repeated closures.</h2><p>Each department has its own work times in this example. The highlighted tasks could be reviewed for a shared block.</p></div><Button render={<Link href="/optimize" />} className="h-10 px-4">Build a shared plan <ArrowRight size={16} /></Button></section>
 
         {/* Baseline Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: 'Total Blocks', value: baselineMetrics.totalBlocks, color: '#B91C1C' },
-            { label: 'Minutes in blocks', value: `${baselineMetrics.totalBlockMinutes.toLocaleString()}`, color: '#D97706' },
-            { label: 'Critical tasks planned', value: `${baselineMetrics.criticalTasksCovered}/${baselineMetrics.totalCriticalTasks}`, color: '#D97706' },
-            { label: 'Shared blocks', value: baselineMetrics.coordinatedMultiDeptBlocks, color: '#B91C1C' },
+            { label: 'Total Blocks', value: summary.blockCount, color: '#B91C1C' },
+            { label: 'Minutes in blocks', value: `${summary.totalMinutes.toLocaleString()}`, color: '#946016' },
+            { label: 'Critical tasks planned', value: `${summary.criticalPlanned}/${summary.criticalTotal}`, color: '#946016' },
+            { label: 'Shared blocks', value: summary.sharedBlocks, color: '#B91C1C' },
           ].map((m, i) => (
             <motion.div key={m.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
               <Card className="border-slate-200 shadow-sm">
                 <CardContent className="p-5 text-center">
                   <p className="text-sm font-bold text-slate-500">{m.label}</p>
-                  <p className="text-3xl md:text-4xl font-black mt-1 tracking-tight" style={{ color: m.color }}>{m.value}</p>
+                  <p className="text-3xl md:text-4xl font-semibold mt-1 tracking-tight" style={{ color: m.color }}>{m.value}</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -118,7 +120,7 @@ export default function CurrentPlanPage() {
                                 >
                                   <div className="flex items-center gap-1.5 min-w-0">
                                     {block.hasCoordinationOpportunity && (
-                                      <Link2 className="w-3.5 h-3.5 flex-shrink-0 text-amber-600" />
+                                      <Link2 className="w-3.5 h-3.5 flex-shrink-0 text-amber-800" />
                                     )}
                                     <span className="text-xs md:text-sm font-bold truncate" style={{ color: colors.text }}>
                                       {block.taskId}: {block.taskTitle}
@@ -149,7 +151,7 @@ export default function CurrentPlanPage() {
         {/* CTA */}
         <div className="flex justify-center pt-2">
           <Link href="/optimize">
-            <Button size="lg" className="bg-[#6D4AFF] hover:bg-[#6D4AFF]/90 text-white gap-2 px-8 py-6 text-base font-semibold shadow-lg shadow-[#6D4AFF]/20">
+            <Button size="lg" className="bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2 px-8 py-6 text-base font-semibold shadow-sm shadow-[#14736D]/20">
               Build a shared plan
               <ArrowRight className="w-5 h-5" />
             </Button>

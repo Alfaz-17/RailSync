@@ -22,11 +22,12 @@ import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { optimizationSteps } from '@/lib/mock-service';
+import { summarizeBlocks } from '@/lib/plan-summary';
 
 const deptColors: Record<Department, { bg: string; border: string; text: string }> = {
   Engineering: { bg: '#245F8E15', border: '#245F8E40', text: '#245F8E' },
-  Signal: { bg: '#D9770615', border: '#D9770640', text: '#D97706' },
-  Traction: { bg: '#6D4AFF15', border: '#6D4AFF40', text: '#6D4AFF' },
+  Signal: { bg: '#94601615', border: '#94601640', text: '#946016' },
+  Traction: { bg: '#14736D15', border: '#14736D40', text: '#14736D' },
 };
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }> }> = {
@@ -49,7 +50,7 @@ function calculateDuration(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
   if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 180;
-  let startMinutes = sh * 60 + sm;
+  const startMinutes = sh * 60 + sm;
   let endMinutes = eh * 60 + em;
   if (endMinutes < startMinutes) {
     endMinutes += 24 * 60;
@@ -198,14 +199,14 @@ export default function PlanPage() {
     return (
       <div>
         <Topbar title="Suggested plan" description="Build a plan to review suggested work times." />
-        <div className="p-6 max-w-[1440px] mx-auto">
+        <div className="page-content">
           <Card className="border-slate-200 border-2 border-dashed">
             <CardContent className="p-12 text-center">
-              <Cpu className="w-12 h-12 text-[#64748B] mx-auto mb-4 opacity-50" />
+              <Cpu className="w-12 h-12 text-[#526175] mx-auto mb-4 opacity-50" />
               <h3 className="text-lg font-semibold text-[#0F172A] mb-2">No plan yet</h3>
-              <p className="text-sm text-[#64748B] mb-6">Start with Build a plan to load the suggested demo schedule.</p>
+              <p className="text-sm text-[#526175] mb-6">Start with Build a plan to load the suggested demo schedule.</p>
               <Link href="/optimize">
-                <Button className="bg-[#6D4AFF] hover:bg-[#6D4AFF]/90 text-white gap-2">
+                <Button className="bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2">
                   Build a plan <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
@@ -219,6 +220,7 @@ export default function PlanPage() {
   const status = statusConfig[planStatus] || statusConfig.RECOMMENDED;
   const StatusIcon = status.icon;
 
+  const summary = summarizeBlocks(plan.blocks);
   const isStale = planStatus === 'STALE';
   const isApproved = planStatus === 'APPROVED';
   const isRejected = planStatus === 'REJECTED';
@@ -228,10 +230,10 @@ export default function PlanPage() {
     <div>
       <Topbar
         title="Suggested plan"
-        description={`${plan.blocks.length} blocks • ${plan.runtimeLabel} • Review before approval`}
+        description={`${plan.blocks.length} sample blocks · Review before approval.`}
       />
 
-      <div className="p-6 max-w-[1440px] mx-auto space-y-4">
+      <div className="page-content space-y-4">
         {/* Status Banner */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -245,7 +247,7 @@ export default function PlanPage() {
               <span className="text-sm font-bold block" style={{ color: status.color }}>
                 {status.label}
               </span>
-              <p className="text-xs text-[#64748B] mt-0.5">
+              <p className="text-xs text-[#526175] mt-0.5">
                 {isApproved && 'This demo plan is approved. View the blocks or download a copy.'}
                 {isRejected && 'Edit the blocks or update the plan, then review it again.'}
                 {canApprove && 'Review the suggested work times, then approve the plan or make changes.'}
@@ -254,7 +256,7 @@ export default function PlanPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge className="text-[10px] bg-white text-slate-700 border border-slate-200">
+            <Badge className="text-xs bg-white text-slate-700 border border-slate-200">
               Demo plan
             </Badge>
           </div>
@@ -263,7 +265,7 @@ export default function PlanPage() {
         {/* Approved Notification Card */}
         {isApproved && (
           <Alert className="border-emerald-300 bg-emerald-50/80 shadow-sm">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-800" />
             <AlertDescription className="text-sm text-emerald-950">
               <div className="font-semibold text-emerald-900 mb-1">
                 • Plan Status: Approved in this demo
@@ -318,15 +320,15 @@ export default function PlanPage() {
         <AnimatePresence>
           {isReoptimizing && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-              <Card className="border-[#6D4AFF]/30">
+              <Card className="border-[#14736D]/30">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-4">
-                    <Loader2 className="w-5 h-5 text-[#6D4AFF] animate-spin" />
+                    <Loader2 className="w-5 h-5 text-[#14736D] animate-spin" />
                     <span className="text-sm font-semibold text-[#0F172A]">Updating the demo plan…</span>
                   </div>
                   <div className="space-y-1.5">
                     {optimizationSteps.map((step, i) => (
-                      <div key={step} className={`flex items-center gap-2 text-xs ${i < reoptStep ? 'text-green-600' : i === reoptStep ? 'text-[#6D4AFF] font-medium' : 'text-slate-400'}`}>
+                      <div key={step} className={`flex items-center gap-2 text-xs ${i < reoptStep ? 'text-green-800' : i === reoptStep ? 'text-[#14736D] font-medium' : 'text-slate-600'}`}>
                         {i < reoptStep ? <CheckCircle2 className="w-3.5 h-3.5" /> : i === reoptStep ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300" />}
                         <span>{step}…</span>
                       </div>
@@ -361,7 +363,7 @@ export default function PlanPage() {
                     return (
                       <motion.div
                         key={block.id}
-                        className={`rounded-lg border p-3.5 cursor-pointer transition-all hover:shadow-md relative ${
+                        className={`rounded-lg border p-3.5 cursor-pointer transition-colors hover:border-slate-300 relative ${
                           isApproved
                             ? 'border-emerald-300/80 bg-emerald-50/15'
                             : isRejected
@@ -375,7 +377,7 @@ export default function PlanPage() {
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-[#64748B]" />
+                            <Clock className="w-4 h-4 text-[#526175]" />
                             <span className="text-sm font-mono font-bold text-[#0F172A]">
                               {block.start} – {block.end}
                             </span>
@@ -383,23 +385,23 @@ export default function PlanPage() {
                               {formatDuration(block.durationMin)}
                             </Badge>
                             {isBlockModified && (
-                              <Badge className="text-[10px] bg-amber-100 text-amber-900 border-amber-300 gap-1 hover:bg-amber-100">
+                              <Badge className="text-xs bg-amber-100 text-amber-900 border-amber-300 gap-1 hover:bg-amber-100">
                                 <Edit3 className="w-2.5 h-2.5" /> Edited
                               </Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
                             {isApproved && (
-                              <Badge className="text-[10px] bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
+                              <Badge className="text-xs bg-emerald-600 text-white gap-1 hover:bg-emerald-600">
                                 <Lock className="w-2.5 h-2.5" /> Approved
                               </Badge>
                             )}
                             {isRejected && (
-                              <Badge className="text-[10px] bg-rose-600 text-white gap-1 hover:bg-rose-600">
+                              <Badge className="text-xs bg-rose-600 text-white gap-1 hover:bg-rose-600">
                                 <AlertTriangle className="w-2.5 h-2.5" /> Needs changes
                               </Badge>
                             )}
-                            <Badge className={`text-[10px] ${
+                            <Badge className={`text-xs ${
                               block.trafficImpact === 'Low'
                                 ? 'bg-green-50 text-green-700 border-green-200'
                                 : block.trafficImpact === 'Medium'
@@ -408,7 +410,7 @@ export default function PlanPage() {
                             }`}>
                               {block.trafficImpact} Impact
                             </Badge>
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
+                            <ChevronRight className="w-4 h-4 text-slate-600" />
                           </div>
                         </div>
 
@@ -424,11 +426,11 @@ export default function PlanPage() {
                                 className="flex items-center gap-1.5 rounded px-2 py-0.5"
                                 style={{ backgroundColor: colors.bg, border: `1px solid ${colors.border}` }}
                               >
-                                <span className="text-[10px] font-mono font-bold" style={{ color: colors.text }}>
+                                <span className="text-xs font-mono font-bold" style={{ color: colors.text }}>
                                   {taskId}
                                 </span>
                                 {task && (
-                                  <span className="text-[10px] font-medium" style={{ color: colors.text }}>
+                                  <span className="text-xs font-medium" style={{ color: colors.text }}>
                                     {task.title}
                                   </span>
                                 )}
@@ -444,7 +446,7 @@ export default function PlanPage() {
                               <Badge
                                 key={d}
                                 variant="outline"
-                                className="text-[10px]"
+                                className="text-xs"
                                 style={{ color: deptColors[d].text, borderColor: deptColors[d].border }}
                               >
                                 {d}
@@ -452,11 +454,11 @@ export default function PlanPage() {
                             ))}
                           </div>
                           {block.plannerNotes && (
-                            <span className="text-[11px] text-amber-700 italic truncate max-w-[280px]">
+                            <span className="text-xs text-amber-700 italic truncate max-w-[280px]">
                               Note: {block.plannerNotes}
                             </span>
                           )}
-                          <span className="text-[11px] text-[#6D4AFF] hover:underline font-medium">
+                          <span className="text-xs text-[#14736D] hover:underline font-medium">
                             View details &rarr;
                           </span>
                         </div>
@@ -474,7 +476,7 @@ export default function PlanPage() {
             <Card className="border-slate-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold text-[#0F172A] flex items-center gap-1.5">
-                  <SlidersHorizontal className="w-4 h-4 text-[#6D4AFF]" />
+                  <SlidersHorizontal className="w-4 h-4 text-[#14736D]" />
                   Plan actions
                 </CardTitle>
               </CardHeader>
@@ -522,7 +524,7 @@ export default function PlanPage() {
                     className="w-full text-xs justify-start gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
                     onClick={simulateCoaChange}
                   >
-                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-800" />
                     Simulate schedule change
                   </Button>
                 )}
@@ -530,7 +532,7 @@ export default function PlanPage() {
                 {(isStale || isRejected) && !isReoptimizing && (
                   <Button
                     size="sm"
-                    className="w-full text-xs justify-start gap-2 bg-[#6D4AFF] hover:bg-[#6D4AFF]/90 text-white"
+                    className="w-full text-xs justify-start gap-2 bg-[#235b80] hover:bg-[#1d4e70] text-white"
                     onClick={handleReoptimize}
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
@@ -548,7 +550,7 @@ export default function PlanPage() {
                     <Ban className="w-4 h-4 text-amber-700" />
                     Tasks without a time slot
                   </span>
-                  <Badge className="bg-amber-200 text-amber-800 text-[10px] hover:bg-amber-200">
+                  <Badge className="bg-amber-200 text-amber-800 text-xs hover:bg-amber-200">
                     {plan.unscheduled.length} pending
                   </Badge>
                 </CardTitle>
@@ -560,14 +562,14 @@ export default function PlanPage() {
                     <div key={us.taskId} className="bg-white rounded-lg border border-amber-200 p-2.5 shadow-sm">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-mono font-bold text-[#0F172A]">{us.taskId}</span>
-                        <Badge variant="outline" className="text-[10px] text-red-600 border-red-300">
+                        <Badge variant="outline" className="text-xs text-red-600 border-red-300">
                           Priority {task?.priorityScore}
                         </Badge>
                       </div>
                       {task && <p className="text-xs font-medium text-[#0F172A]">{task.title}</p>}
                       <div className="mt-1.5 bg-red-50 border border-red-200 rounded p-1.5">
-                        <p className="text-[10px] text-red-700 font-bold">More time needed</p>
-                        <p className="text-[10px] text-red-600">{us.reason}</p>
+                        <p className="text-xs text-red-700 font-bold">More time needed</p>
+                        <p className="text-xs text-red-600">{us.reason}</p>
                       </div>
                     </div>
                   );
@@ -582,14 +584,14 @@ export default function PlanPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {[
-                  { label: 'Track closures', value: plan.metrics.totalBlocks },
-                  { label: 'Minutes in blocks', value: `${plan.metrics.totalBlockMinutes.toLocaleString()} min` },
-                  { label: 'Critical tasks planned', value: `${plan.metrics.criticalTasksCovered}/${plan.metrics.totalCriticalTasks}` },
-                  { label: 'Shared blocks', value: plan.metrics.coordinatedMultiDeptBlocks },
-                  { label: 'Reported rule issues', value: plan.metrics.hardViolations ?? 0 },
+                  { label: 'Track closures', value: summary.blockCount },
+                  { label: 'Minutes in blocks', value: `${summary.totalMinutes.toLocaleString()} min` },
+                  { label: 'Critical tasks planned', value: `${summary.criticalPlanned}/${summary.criticalTotal}` },
+                  { label: 'Shared blocks', value: summary.sharedBlocks },
+                  { label: 'Automatic rule checks', value: 'Not connected' },
                 ].map((m) => (
                   <div key={m.label} className="flex justify-between text-xs py-0.5 border-b border-slate-100 last:border-0">
-                    <span className="text-[#64748B]">{m.label}</span>
+                    <span className="text-[#526175]">{m.label}</span>
                     <span className="font-semibold text-[#0F172A]">{m.value}</span>
                   </div>
                 ))}
@@ -747,7 +749,7 @@ export default function PlanPage() {
 
       {/* Block Detail & Edit Sheet */}
       <Sheet open={!!selectedBlock} onOpenChange={(open) => !open && setSelectedBlock(null)}>
-        <SheetContent className="w-[440px] sm:max-w-[440px] overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-[480px] overflow-y-auto">
           {selectedBlock && (
             <>
               <SheetHeader>
@@ -755,7 +757,7 @@ export default function PlanPage() {
                   <SheetTitle className="text-base font-bold flex items-center gap-2">
                     {selectedBlock.id}
                     {selectedBlock.isModified && (
-                      <Badge className="text-[10px] bg-amber-100 text-amber-800 border-amber-300">
+                      <Badge className="text-xs bg-amber-100 text-amber-800 border-amber-300">
                         Modified
                       </Badge>
                     )}
@@ -763,11 +765,11 @@ export default function PlanPage() {
                   <Button
                     size="sm"
                     variant={isEditingBlock ? 'default' : 'outline'}
-                    className={`text-xs gap-1.5 ${isEditingBlock ? 'bg-[#6D4AFF] text-white' : ''}`}
+                    className={`text-xs gap-1.5 ${isEditingBlock ? 'bg-[#235b80] text-white' : ''}`}
                     onClick={() => setIsEditingBlock(!isEditingBlock)}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
-                    {isEditingBlock ? 'Viewing Rationale' : 'Modify Block'}
+                    {isEditingBlock ? 'View details' : 'Edit block'}
                   </Button>
                 </div>
               </SheetHeader>
@@ -777,35 +779,37 @@ export default function PlanPage() {
                 <div className="mt-4 space-y-4">
                   <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
                     <p className="text-xs font-semibold text-amber-900 mb-1">
-                      Human-in-the-Loop Manual Override
+                      Edit this block
                     </p>
-                    <p className="text-[11px] text-amber-700">
-                      You can adjust the time window, change traffic impact classification, or record planner notes.
+                    <p className="text-xs text-amber-700">
+                      Change the time, expected effect on trains, or your notes.
                     </p>
                   </div>
 
                   {/* Timing Inputs */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-[#0F172A] block">
-                      Block Window Timing
+                      Work time
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-[11px] text-slate-500 block mb-1">Start Time (HH:MM)</span>
+                        <span className="text-xs text-slate-500 block mb-1">Start Time (HH:MM)</span>
                         <input
                           type="time"
+                          aria-label="Block start time"
                           value={editStart}
                           onChange={(e) => setEditStart(e.target.value)}
-                          className="w-full text-xs font-mono font-bold p-2 border border-slate-300 rounded-md focus:border-[#6D4AFF] focus:ring-1 focus:ring-[#6D4AFF] outline-none"
+                          className="w-full text-xs font-mono font-bold p-2 border border-slate-300 rounded-md focus:border-[#14736D] focus:ring-1 focus:ring-[#14736D] outline-none"
                         />
                       </div>
                       <div>
-                        <span className="text-[11px] text-slate-500 block mb-1">End Time (HH:MM)</span>
+                        <span className="text-xs text-slate-500 block mb-1">End Time (HH:MM)</span>
                         <input
                           type="time"
+                          aria-label="Block end time"
                           value={editEnd}
                           onChange={(e) => setEditEnd(e.target.value)}
-                          className="w-full text-xs font-mono font-bold p-2 border border-slate-300 rounded-md focus:border-[#6D4AFF] focus:ring-1 focus:ring-[#6D4AFF] outline-none"
+                          className="w-full text-xs font-mono font-bold p-2 border border-slate-300 rounded-md focus:border-[#14736D] focus:ring-1 focus:ring-[#14736D] outline-none"
                         />
                       </div>
                     </div>
@@ -817,7 +821,7 @@ export default function PlanPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-[10px] h-6 px-2"
+                          className="text-xs h-6 px-2"
                           onClick={() => handleAdjustMinutes(-30)}
                         >
                           -30m
@@ -825,7 +829,7 @@ export default function PlanPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="text-[10px] h-6 px-2"
+                          className="text-xs h-6 px-2"
                           onClick={() => handleAdjustMinutes(30)}
                         >
                           +30m
@@ -837,7 +841,7 @@ export default function PlanPage() {
                   {/* Traffic Impact */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-[#0F172A] block">
-                      Traffic Impact Classification
+                      Expected effect on trains
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['Low', 'Medium', 'High'] as TrafficImpact[]).map((impact) => (
@@ -845,9 +849,9 @@ export default function PlanPage() {
                           key={impact}
                           type="button"
                           onClick={() => setEditTraffic(impact)}
-                          className={`p-2 rounded border text-xs font-medium transition-all ${
+                          className={`p-2 rounded border text-xs font-medium transition-colors ${
                             editTraffic === impact
-                              ? 'border-[#6D4AFF] bg-[#6D4AFF]/10 text-[#6D4AFF] font-bold'
+                              ? 'border-[#14736D] bg-[#14736D]/10 text-[#14736D] font-bold'
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
@@ -860,14 +864,15 @@ export default function PlanPage() {
                   {/* Planner Notes */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-[#0F172A] block">
-                      Planner Operational Notes
+                      Planner notes
                     </label>
                     <textarea
+                      aria-label="Planner notes"
                       value={editNotes}
                       onChange={(e) => setEditNotes(e.target.value)}
-                      placeholder="e.g., Extended window by 30 mins to permit gang travel clearance..."
+                      placeholder="e.g., Added 30 minutes for crew travel."
                       rows={3}
-                      className="w-full text-xs p-2.5 border border-slate-300 rounded-md focus:border-[#6D4AFF] focus:ring-1 focus:ring-[#6D4AFF] outline-none resize-none"
+                      className="w-full text-xs p-2.5 border border-slate-300 rounded-md focus:border-[#14736D] focus:ring-1 focus:ring-[#14736D] outline-none resize-none"
                     />
                   </div>
 
@@ -897,12 +902,12 @@ export default function PlanPage() {
                             className={`flex items-center justify-between p-2 rounded border text-xs cursor-pointer transition-colors ${
                               isIncluded
                                 ? 'border-green-300 bg-green-50/50 text-green-900'
-                                : 'border-slate-200 bg-slate-50 text-slate-400 line-through'
+                                : 'border-slate-200 bg-slate-50 text-slate-600 line-through'
                             }`}
                           >
                             <span className="font-mono font-semibold">{taskId}</span>
-                            <span className="truncate max-w-[200px] text-[11px]">{task?.title}</span>
-                            <Badge variant={isIncluded ? 'default' : 'outline'} className="text-[9px]">
+                            <span className="truncate max-w-[200px] text-xs">{task?.title}</span>
+                            <Badge variant={isIncluded ? 'default' : 'outline'} className="text-xs">
                               {isIncluded ? 'Included' : 'Removed'}
                             </Badge>
                           </div>
@@ -921,11 +926,11 @@ export default function PlanPage() {
                       Cancel
                     </Button>
                     <Button
-                      className="flex-1 text-xs bg-[#6D4AFF] hover:bg-[#6D4AFF]/90 text-white gap-1.5"
+                      className="flex-1 text-xs bg-[#235b80] hover:bg-[#1d4e70] text-white gap-1.5"
                       onClick={handleSaveBlock}
                     >
                       <Save className="w-3.5 h-3.5" />
-                      Save Modifications
+                      Save changes
                     </Button>
                   </div>
                 </div>
@@ -933,12 +938,12 @@ export default function PlanPage() {
                 /* READ-ONLY / RATIONALE MODE */
                 <div className="mt-4 space-y-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-[#64748B]" />
+                    <Clock className="w-4 h-4 text-[#526175]" />
                     <span className="font-mono font-bold">{selectedBlock.start} – {selectedBlock.end}</span>
                     <Badge variant="outline" className="text-xs">{formatDuration(selectedBlock.durationMin)}</Badge>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-[#64748B]" />
+                    <Calendar className="w-4 h-4 text-[#526175]" />
                     <span>{selectedBlock.corridorName}</span>
                   </div>
 
@@ -952,8 +957,8 @@ export default function PlanPage() {
                   <Separator />
 
                   <div>
-                    <h4 className="text-xs font-semibold text-[#0F172A] mb-2 uppercase tracking-wide">
-                      Tasks Coordinated in this Block ({selectedBlock.taskIds.length})
+                    <h4 className="text-xs font-semibold text-[#0F172A] mb-2 tracking-normal">
+                      Tasks in this block ({selectedBlock.taskIds.length})
                     </h4>
                     <div className="space-y-2">
                       {selectedBlock.taskIds.map((taskId) => {
@@ -963,7 +968,7 @@ export default function PlanPage() {
                           <div key={taskId} className="rounded-lg border p-2.5" style={{ borderColor: deptColors[dept].border, backgroundColor: deptColors[dept].bg }}>
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-mono font-bold" style={{ color: deptColors[dept].text }}>{taskId}</span>
-                              <Badge variant="outline" className="text-[10px]" style={{ color: deptColors[dept].text, borderColor: deptColors[dept].border }}>{dept}</Badge>
+                              <Badge variant="outline" className="text-xs" style={{ color: deptColors[dept].text, borderColor: deptColors[dept].border }}>{dept}</Badge>
                             </div>
                             {task && (
                               <p className="text-xs mt-1 font-medium" style={{ color: deptColors[dept].text }}>
@@ -979,13 +984,13 @@ export default function PlanPage() {
                   <Separator />
 
                   <div>
-                    <h4 className="text-xs font-semibold text-[#0F172A] mb-2 uppercase tracking-wide">
+                    <h4 className="text-xs font-semibold text-[#0F172A] mb-2 tracking-normal">
                       Why AI Shadowed These Works
                     </h4>
                     <div className="space-y-1.5">
                       {selectedBlock.reasons.map((reason, i) => (
                         <div key={i} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-800 mt-0.5 flex-shrink-0" />
                           <span className="text-xs text-[#0F172A]">{reason}</span>
                         </div>
                       ))}
@@ -996,7 +1001,7 @@ export default function PlanPage() {
 
                   <Button
                     variant="outline"
-                    className="w-full text-xs gap-1.5 border-[#6D4AFF]/30 text-[#6D4AFF] hover:bg-[#6D4AFF]/10"
+                    className="w-full text-xs gap-1.5 border-[#14736D]/30 text-[#14736D] hover:bg-[#14736D]/10"
                     onClick={() => setIsEditingBlock(true)}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -1016,13 +1021,13 @@ export default function PlanPage() {
             <DialogTitle>Reject Maintenance Plan</DialogTitle>
           </DialogHeader>
           <div className="space-y-2 py-4">
-            <p className="text-xs text-[#64748B] mb-3">
+            <p className="text-xs text-[#526175] mb-3">
               Please select the primary operational constraint requiring plan rejection:
             </p>
             {rejectReasons.map((reason) => (
               <label
                 key={reason}
-                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                   selectedRejectReason === reason ? 'border-red-400 bg-red-50' : 'border-slate-200 hover:bg-slate-50'
                 }`}
               >
