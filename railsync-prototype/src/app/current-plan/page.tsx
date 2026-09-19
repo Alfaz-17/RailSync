@@ -11,6 +11,8 @@ import { ArrowRight, AlertCircle, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+import { ShadowBlockDiagram } from '@/components/visualizations/shadow-block-diagram';
+
 const deptColors: Record<Department, { bg: string; border: string; text: string }> = {
   Engineering: { bg: '#245F8E15', border: '#245F8E40', text: '#245F8E' },
   Signal: { bg: '#94601615', border: '#94601640', text: '#946016' },
@@ -36,6 +38,9 @@ export default function CurrentPlanPage() {
 
       <div className="page-content space-y-6">
         <section className="page-intro"><div><div className="eyebrow">Before shared planning</div><h2>Separate plans can mean repeated closures.</h2><p>Each department has its own work times in this example. The highlighted tasks could be reviewed for a shared block.</p></div><Button render={<Link href="/optimize" />} className="h-10 px-4">Build a shared plan <ArrowRight size={16} /></Button></section>
+
+        {/* Visual Shadow Block Explainer */}
+        <ShadowBlockDiagram />
 
         {/* Baseline Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

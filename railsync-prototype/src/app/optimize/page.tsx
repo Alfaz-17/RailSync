@@ -9,6 +9,7 @@ import { ClipboardList, CalendarDays, Users, ShieldCheck, CheckCircle2, ArrowRig
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
+import { PipelineArchitectureDiagram } from '@/components/visualizations/pipeline-architecture-diagram';
 
 const inputs = [
   { label: 'Maintenance tasks', value: 35, note: 'From three departments', icon: ClipboardList },
@@ -46,6 +47,10 @@ export default function OptimizePage() {
         <div className="stat-grid">
           {inputs.map(({ label, value, note, icon: Icon }) => <div key={label} className="stat-tile"><div className="stat-label">{label}<Icon size={17} /></div><p className="stat-value">{value}</p><p className="stat-note">{note}</p></div>)}
         </div>
+
+        {/* Visual Architecture & Workflow Diagram */}
+        <PipelineArchitectureDiagram />
+
         <section className="panel">
           <div className="panel-heading"><div><h2>Weekly planning</h2><p>15–21 September 2026 · Five track sections</p></div><span className="demo-label">Simulated run</span></div>
           <div className="p-6 sm:p-9 grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -9,6 +9,7 @@ import { normalPlan } from '@/data/optimized-plan';
 import { summarizeBlocks } from '@/lib/plan-summary';
 import { formatDuration } from '@/lib/format';
 import { ArrowRight, Info } from 'lucide-react';
+import { KpiImpactVisual } from '@/components/visualizations/kpi-impact-visual';
 
 const baseline = summarizeBlocks(fragmentedBlocks.map(block => ({ ...block, taskIds: [block.taskId], departments: [block.department] })));
 
@@ -39,6 +40,10 @@ export default function AnalyticsPage() {
           <div><div className="eyebrow">{plan ? 'Current demo plan' : 'Example results · Build a plan to try it'}</div><h2>See what changes with shared planning.</h2><p>These totals come from the blocks shown in the demo. Use them to explain the plan and the work that still needs a time slot.</p></div>
           <Button render={<Link href={plan ? '/plan' : '/optimize'} />} className="h-10 px-4">{plan ? 'Review the plan' : 'Build a plan'}<ArrowRight size={16} /></Button>
         </section>
+
+        {/* Visual KPI Impact Comparison */}
+        <KpiImpactVisual />
+
         <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 flex gap-3 text-sm text-amber-900">
           <Info size={18} className="shrink-0 mt-0.5" /><p>The two sample plans include different tasks. The totals below show their contents; they do not measure real railway savings. Safety rules have not been automatically checked.</p>
         </div>
