@@ -40,8 +40,18 @@ export function GuidedTourBar() {
               {steps.map((step, index) => <Link key={step.route} href={step.route} aria-current={index === stepIndex ? 'step' : undefined} className={index === stepIndex ? 'is-active' : ''}><span>{index + 1}</span>{step.title}</Link>)}
             </nav>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-700">{steps[stepIndex].note}</p>
-              {next && <Button variant="outline" size="sm" render={<Link href={next.route} />}>Next: {next.title}<ArrowRight size={14} /></Button>}
+              <p className="text-sm text-slate-300">{steps[stepIndex].note}</p>
+              {next && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={<Link href={next.route} />}
+                  className="border-slate-700 bg-slate-800/90 text-slate-100 hover:bg-slate-700"
+                >
+                  Next: {next.title}
+                  <ArrowRight size={14} />
+                </Button>
+              )}
             </div>
           </div>
         )}

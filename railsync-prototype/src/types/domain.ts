@@ -5,21 +5,29 @@ export type Department = 'Engineering' | 'Signal' | 'Traction';
 
 export type PriorityBand = 'Critical' | 'High' | 'Medium' | 'Low';
 
+export type TaskStatus = 'PENDING' | 'SCHEDULED' | 'APPROVED' | 'COMPLETED' | 'CANCELLED';
+
+export type OptimizationStatus = 'RUNNING' | 'FEASIBLE' | 'OPTIMAL' | 'TIME_LIMIT' | 'INFEASIBLE' | 'FAILED';
+
 export type PlanStatus =
   | 'BASELINE'
   | 'OPTIMIZING'
   | 'RECOMMENDED'
+  | 'UNDER_REVIEW'
   | 'STALE'
   | 'REOPTIMIZING'
   | 'RECOMMENDED_V2'
   | 'APPROVED'
-  | 'REJECTED';
+  | 'REJECTED'
+  | 'SUPERSEDED';
 
 export type SourceSystem = 'TMS' | 'SMMS' | 'TDMS';
 
 export type WindowAvailability = 'Available' | 'Restricted' | 'Unavailable';
 
 export type TrafficImpact = 'Low' | 'Medium' | 'High';
+
+export type ImpactLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 // ─── Maintenance Task ────────────────────────────────────────────────
 
@@ -33,6 +41,7 @@ export interface MaintenanceTask {
   durationMin: number;
   priorityScore: number;
   priorityBand: PriorityBand;
+  status: TaskStatus;
   dueDate: string;
   criticality: number;
   urgency: number;
@@ -72,6 +81,42 @@ export interface PlanBlock {
   reasons: string[];
   isModified?: boolean;
   plannerNotes?: string;
+}
+
+// ─── Affected Train ─────────────────────────────────────────────────
+
+export interface AffectedTrain {
+  trainId: string;
+  trainName?: string;
+  type: 'Passenger' | 'Goods' | 'Express';
+  scheduledTime: string;
+  impact: 'INSIDE_BLOCK' | 'CLEAR' | 'DELAYED';
+  delayMinutes?: number;
+}
+
+// ─── Alternative Window ──────────────────────────────────────────────
+
+export interface AlternativeWindow {
+  start: string;
+  end: string;
+  impact: ImpactLevel;
+}
+
+// ─── Block Recommendation (heart of the demo) ───────────────────────
+
+export interface BlockRecommendation {
+  blockId: string;
+  corridorId: string;
+  corridorName: string;
+  start: string;
+  end: string;
+  tasks: string[];
+  departments: Department[];
+  priority: PriorityBand;
+  trafficImpact: TrafficImpact;
+  affectedTrains: AffectedTrain[];
+  alternativeWindows: AlternativeWindow[];
+  reasons: string[];
 }
 
 // ─── Unscheduled Task ────────────────────────────────────────────────

@@ -2,31 +2,51 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Database, ClipboardList, GitBranch, CalendarPlus, Map, BarChart3, TrainFront } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Database,
+  Wrench,
+  GitBranch,
+  Cpu,
+  Map,
+  ChartNoAxesCombined,
+  TrainFront,
+} from 'lucide-react';
 
 const sections = [
-  { title: 'Workspace', items: [
-    { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { href: '/data-sources', label: 'Data sources', icon: Database },
-    { href: '/tasks', label: 'Maintenance tasks', icon: ClipboardList },
-  ] },
-  { title: 'Planning', items: [
-    { href: '/current-plan', label: 'Current plan', icon: GitBranch },
-    { href: '/optimize', label: 'Build a plan', icon: CalendarPlus },
-    { href: '/plan', label: 'Suggested plan', icon: Map },
-    { href: '/analytics', label: 'Results', icon: BarChart3 },
-  ] },
+  {
+    title: 'Operations',
+    items: [
+      { href: '/dashboard', label: 'Command Center', icon: LayoutDashboard },
+      { href: '/tasks', label: 'Maintenance Workbank', icon: Wrench },
+      { href: '/current-plan', label: 'Current Plan', icon: GitBranch },
+    ],
+  },
+  {
+    title: 'Planning',
+    items: [
+      { href: '/optimize', label: 'Optimization', icon: Cpu },
+      { href: '/plan', label: 'Recommended Plan', icon: Map },
+      { href: '/analytics', label: 'Analytics', icon: ChartNoAxesCombined },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { href: '/data-sources', label: 'Data Sources', icon: Database },
+    ],
+  },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   return (
     <aside className="app-sidebar">
-      <Link href="/dashboard" className="sidebar-brand" aria-label="RailSync overview">
-        <span className="brand-icon"><TrainFront size={23} /></span>
-        <span><strong>RailSync</strong><small>Maintenance planning</small></span>
+      <Link href="/dashboard" className="sidebar-brand" aria-label="RailSync home">
+        <span className="brand-icon"><TrainFront size={22} /></span>
+        <span><strong>RailSync</strong><small>Maintenance Planning</small></span>
       </Link>
-      <div className="sidebar-division"><span className="division-dot" /><span>Western Railway<small>Vadodara demo workspace</small></span></div>
+      <div className="sidebar-division"><span className="division-dot" /><span>Western Railway<small>Vadodara Division</small></span></div>
       <nav aria-label="Main navigation" className="sidebar-nav">
         {sections.map((section) => (
           <div key={section.title} className="nav-section">
@@ -39,8 +59,7 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-      <div className="sidebar-footer"><span className="planner-avatar">RP</span><span><strong>Railway planner</strong><small>Demo workspace</small></span></div>
+      <div className="sidebar-footer"><span className="planner-avatar">RP</span><span><strong>Railway Planner</strong><small>Demo workspace</small></span></div>
     </aside>
   );
 }
-
