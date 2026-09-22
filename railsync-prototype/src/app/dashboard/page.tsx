@@ -15,6 +15,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell,
   PieChart, Pie, Tooltip as RechartsTooltip, Legend,
 } from 'recharts';
+import { CorridorSchematicMap } from '@/components/corridor/corridor-schematic-map';
+import { BeforeAfterImpact } from '@/components/analytics/before-after-impact';
 
 const departments = [
   { key: 'Engineering' as const, label: 'Engineering', detail: 'Track, bridges, and civil work', icon: Wrench, color: 'var(--dept-engineering)' },
@@ -70,6 +72,12 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+
+        {/* Live Route Corridor Schematic Diagram */}
+        <CorridorSchematicMap />
+
+        {/* Before vs After Impact Analysis */}
+        <BeforeAfterImpact />
 
         {/* 2 charts max on dashboard as per spec */}
         <div className="dashboard-columns">
