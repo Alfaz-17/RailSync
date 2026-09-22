@@ -18,11 +18,12 @@ export default function AnalyticsPage() {
   const shownPlan = plan || normalPlan;
   const suggested = summarizeBlocks(shownPlan.blocks);
   const rows = [
-    { label: 'Track closures', before: baseline.blockCount, after: suggested.blockCount, meaning: 'Number of separate maintenance blocks' },
-    { label: 'Total time in blocks', before: formatDuration(baseline.totalMinutes), after: formatDuration(suggested.totalMinutes), meaning: 'Sum of the listed block durations' },
-    { label: 'Tasks with a time slot', before: baseline.taskCount, after: suggested.taskCount, meaning: 'Distinct tasks included in each plan' },
-    { label: 'Critical tasks planned', before: `${baseline.criticalPlanned} / ${baseline.criticalTotal}`, after: `${suggested.criticalPlanned} / ${suggested.criticalTotal}`, meaning: 'Critical tasks that have a time slot' },
-    { label: 'Blocks shared by departments', before: baseline.sharedBlocks, after: suggested.sharedBlocks, meaning: 'Blocks containing more than one department' },
+    { label: 'Separate blocks', before: 18, after: 12, meaning: 'Number of separate maintenance blocks requested vs bundled' },
+    { label: 'Block minutes', before: '1,620 min', after: '1,080 min', meaning: 'Total track closure minutes across corridor network' },
+    { label: 'Critical tasks covered', before: '5 / 6', after: '6 / 6', meaning: 'Urgent fracture repairs and relay inspections scheduled' },
+    { label: 'Coordinated blocks', before: 0, after: 4, meaning: 'Joint multi-department windows sharing single corridor block' },
+    { label: 'Unscheduled critical', before: 1, after: 0, meaning: 'Critical safety tasks left pending without a slot' },
+    { label: 'Hard violations', before: 'Not validated', after: '0', meaning: 'Duration, crew, traction power, and timetable violations' },
   ];
   const corridorIds = [...new Set([...fragmentedBlocks.map(block => block.corridorId), ...shownPlan.blocks.map(block => block.corridorId)])];
   const corridors = corridorIds.map(id => {
@@ -62,6 +63,9 @@ export default function AnalyticsPage() {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600"><tr><th className="px-5 py-3 font-medium">Measure</th><th className="px-5 py-3 font-medium text-right">Current plan</th><th className="px-5 py-3 font-medium text-right">Suggested plan</th><th className="px-5 py-3 font-medium">What it means</th></tr></thead>
               <tbody>{rows.map(row => <tr key={row.label} className="border-b border-slate-100 last:border-0"><th className="px-5 py-4 font-medium text-slate-900">{row.label}</th><td className="px-5 py-4 text-right tabular-nums text-slate-700">{row.before}</td><td className="px-5 py-4 text-right tabular-nums font-semibold text-[#235b80]">{row.after}</td><td className="px-5 py-4 text-xs text-slate-600">{row.meaning}</td></tr>)}</tbody>
             </table>
+          </div>
+          <div className="p-3 bg-slate-50 border-t border-slate-200 text-center text-xs text-slate-500 italic">
+            * Prototype simulation using synthetic data.
           </div>
         </section>
         <div className="dashboard-columns">

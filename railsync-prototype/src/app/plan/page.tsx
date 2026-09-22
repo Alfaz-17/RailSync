@@ -15,14 +15,15 @@ import { formatDuration, formatDateTime } from '@/lib/format';
 import {
   CheckCircle2, AlertTriangle, XCircle, ShieldAlert, ArrowRight,
   Cpu, Loader2, Calendar, Clock, ChevronRight, Ban, RefreshCw, ThumbsUp, ThumbsDown,
-  Lock, Download, Edit3, Save, RotateCcw, Check, Sparkles, SlidersHorizontal,
+  Lock, Download, Edit3, Save, RotateCcw, Check, Sparkles, SlidersHorizontal, TrainFront,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { optimizationSteps } from '@/lib/mock-service';
+import { optimizationSteps, reoptimizationSteps } from '@/lib/mock-service';
 import { summarizeBlocks } from '@/lib/plan-summary';
+import { affectedTrainsByBlock, alternativeWindowsByBlock } from '@/data/affected-trains';
 
 const deptColors: Record<Department, { bg: string; border: string; text: string }> = {
   Engineering: { bg: '#245F8E15', border: '#245F8E40', text: '#245F8E' },
@@ -129,14 +130,14 @@ export default function PlanPage() {
 
   const handleReoptimize = useCallback(async () => {
     setIsReoptimizing(true);
-    for (let i = 0; i < optimizationSteps.length; i++) {
+    for (let i = 0; i < reoptimizationSteps.length; i++) {
       setReoptStep(i);
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 400));
     }
     await reoptimize();
     setIsReoptimizing(false);
     setReoptStep(-1);
-    toast.success('Plan updated after the schedule change');
+    toast.success('Plan re-optimized: Rescheduled around unavailable window');
   }, [reoptimize]);
 
   const handleApprove = useCallback(() => {
@@ -303,15 +304,34 @@ export default function PlanPage() {
 
         {/* Stale Warning Card */}
         {isStale && (
-          <Alert className="border-red-300 bg-red-50">
-            <ShieldAlert className="w-4 h-4 text-red-600" />
-            <AlertDescription className="text-sm text-red-800">
-              <div className="font-semibold text-red-900 mb-1">• A work slot has changed</div>
-              <ul className="text-xs text-red-700 space-y-0.5 list-disc pl-4">
-                <li>The time available for <strong>BW-001</strong> has changed.</li>
-                <li>Affected: 1 corridor block • 2 multi-department maintenance tasks.</li>
-                <li>Update the plan to use the revised work times.</li>
-              </ul>
+          <Alert className="border-red-400 bg-red-50/90 shadow-md">
+            <ShieldAlert className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <AlertDescription className="text-sm text-red-950">
+              <div className="font-bold text-red-900 text-base mb-1 flex items-center gap-2">
+                <span>⚠ PLAN STALE</span>
+                <Badge className="bg-red-200 text-red-900 border-red-300 text-xs">Operating conditions changed</Badge>
+              </div>
+              <p className="text-xs text-red-800 mb-2">
+                The Control Office has marked window <strong>BW-001 (01:00–03:00)</strong> on <strong>Ahmedabad → Nadiad</strong> as <span className="font-bold text-red-900 uppercase">Unavailable</span> due to rake movement changes.
+              </p>
+              <div className="flex flex-wrap gap-4 text-xs font-semibold text-red-950 bg-red-100/90 p-2.5 rounded-lg border border-red-200 mb-3">
+                <span>• Affected Block: <strong>1 (BLOCK-001)</strong></span>
+                <span>• Affected Maintenance Tasks: <strong>2 (ENG-001 Track Repair, SIG-001 Signal Inspection)</strong></span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  className="bg-red-700 hover:bg-red-800 text-white font-bold gap-2 text-xs"
+                  onClick={handleReoptimize}
+                  disabled={isReoptimizing}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isReoptimizing ? 'animate-spin' : ''}`} />
+                  Re-optimize Plan Now
+                </Button>
+                <span className="text-xs text-red-700">
+                  Preserves planner locks and moves tasks into next eligible candidate window.
+                </span>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -320,17 +340,23 @@ export default function PlanPage() {
         <AnimatePresence>
           {isReoptimizing && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-              <Card className="border-[#14736D]/30">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <Loader2 className="w-5 h-5 text-[#14736D] animate-spin" />
-                    <span className="text-sm font-semibold text-[#0F172A]">Updating the demo plan…</span>
+              <Card className="border-sky-300 bg-sky-50/40 shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <Loader2 className="w-4 h-4 text-sky-600 animate-spin" />
+                    <span className="text-sm font-bold text-slate-900">Re-optimizing Plan against Updated Operating State…</span>
                   </div>
-                  <div className="space-y-1.5">
-                    {optimizationSteps.map((step, i) => (
-                      <div key={step} className={`flex items-center gap-2 text-xs ${i < reoptStep ? 'text-green-800' : i === reoptStep ? 'text-[#14736D] font-medium' : 'text-slate-600'}`}>
-                        {i < reoptStep ? <CheckCircle2 className="w-3.5 h-3.5" /> : i === reoptStep ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <div className="w-3.5 h-3.5 rounded-full border border-slate-300" />}
-                        <span>{step}…</span>
+                  <div className="space-y-2">
+                    {reoptimizationSteps.map((step, i) => (
+                      <div key={step} className={`flex items-center gap-2.5 text-xs ${i < reoptStep ? 'text-emerald-800 font-semibold' : i === reoptStep ? 'text-sky-700 font-bold' : 'text-slate-400'}`}>
+                        {i < reoptStep ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        ) : i === reoptStep ? (
+                          <Loader2 className="w-4 h-4 text-sky-600 animate-spin shrink-0" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border border-slate-300 shrink-0" />
+                        )}
+                        <span>{step}... {i < reoptStep ? '✓' : ''}</span>
                       </div>
                     ))}
                   </div>
@@ -542,34 +568,65 @@ export default function PlanPage() {
               </CardContent>
             </Card>
 
-            {/* Tasks without a time slot */}
-            <Card className="border-amber-200 bg-amber-50/40">
+            {/* Tasks without a time slot (Hard Constraints Enforced) */}
+            <Card className="border-rose-200 bg-rose-50/30">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-semibold text-amber-900 flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-rose-950 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <Ban className="w-4 h-4 text-amber-700" />
-                    Tasks without a time slot
+                    <Ban className="w-4 h-4 text-rose-600" />
+                    Unscheduled Tasks
                   </span>
-                  <Badge className="bg-amber-200 text-amber-800 text-xs hover:bg-amber-200">
-                    {plan.unscheduled.length} pending
+                  <Badge className="bg-rose-100 text-rose-800 border border-rose-300 text-xs font-semibold hover:bg-rose-100">
+                    {plan.unscheduled.length} Action Required
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
+                <div className="text-[11px] text-slate-600 leading-snug">
+                  Hard constraints strictly enforced. RailSync never invents a fake or unsafe slot when corridor capacity is exceeded.
+                </div>
                 {plan.unscheduled.map((us) => {
                   const task = tasks.find((t) => t.id === us.taskId);
+                  const requiredMin = us.requiredDurationMin || task?.durationMin || 180;
+                  const largestMin = us.largestValidWindowMin || 120;
                   return (
-                    <div key={us.taskId} className="bg-white rounded-lg border border-amber-200 p-2.5 shadow-sm">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-mono font-bold text-[#0F172A]">{us.taskId}</span>
-                        <Badge variant="outline" className="text-xs text-red-600 border-red-300">
-                          Priority {task?.priorityScore}
-                        </Badge>
+                    <div key={us.taskId} className="bg-white rounded-lg border border-rose-200 p-3 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-mono font-bold text-slate-900">{us.taskId}</span>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[11px] text-rose-700 border-rose-300 bg-rose-50 font-bold">
+                            UNSCHEDULED
+                          </Badge>
+                          <Badge variant="outline" className="text-[11px] text-slate-700">
+                            P{task?.priorityScore || 58}
+                          </Badge>
+                        </div>
                       </div>
-                      {task && <p className="text-xs font-medium text-[#0F172A]">{task.title}</p>}
-                      <div className="mt-1.5 bg-red-50 border border-red-200 rounded p-1.5">
-                        <p className="text-xs text-red-700 font-bold">More time needed</p>
-                        <p className="text-xs text-red-600">{us.reason}</p>
+
+                      {task && (
+                        <div>
+                          <p className="text-xs font-semibold text-slate-900">{task.title}</p>
+                          <p className="text-[11px] text-slate-500">{task.corridorName}</p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-slate-50 p-2 rounded border border-slate-100 font-mono">
+                        <div>
+                          <span className="text-slate-400 block text-[10px] uppercase font-sans">Required Duration</span>
+                          <span className="font-bold text-slate-800">{requiredMin} min</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[10px] uppercase font-sans">Eligible Window</span>
+                          <span className="font-bold text-rose-700">{largestMin} min max</span>
+                        </div>
+                      </div>
+
+                      <div className="bg-rose-50/80 border border-rose-200 rounded p-2 text-xs">
+                        <div className="flex items-center justify-between text-rose-900 font-bold text-[11px] mb-0.5">
+                          <span>{us.reasonCode || 'NO_FEASIBLE_WINDOW'}</span>
+                          <span className="text-[10px] font-medium text-rose-700 uppercase">Planner Action</span>
+                        </div>
+                        <p className="text-[11px] text-rose-800 leading-tight">{us.reason}</p>
                       </div>
                     </div>
                   );
@@ -996,6 +1053,147 @@ export default function PlanPage() {
                       ))}
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Affected Train Movements */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs font-semibold text-[#0F172A] flex items-center gap-1.5 tracking-normal">
+                        <TrainFront className="w-3.5 h-3.5 text-[#14736D]" />
+                        Affected Train Movements ({(affectedTrainsByBlock[selectedBlock.id] || []).length})
+                      </h4>
+                      <Badge className={`text-[10px] ${
+                        selectedBlock.trafficImpact === 'Low'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : selectedBlock.trafficImpact === 'Medium'
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-rose-100 text-rose-800 border-rose-300'
+                      }`}>
+                        Traffic Impact: {selectedBlock.trafficImpact}
+                      </Badge>
+                    </div>
+
+                    {(affectedTrainsByBlock[selectedBlock.id] || []).length === 0 ? (
+                      <p className="text-xs text-slate-500 italic py-1">No conflicting train movements detected during this window.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(affectedTrainsByBlock[selectedBlock.id] || []).map((train) => (
+                          <div
+                            key={train.trainId}
+                            className={`flex items-center justify-between p-2 rounded-lg border text-xs ${
+                              train.impact === 'INSIDE_BLOCK'
+                                ? 'border-amber-200 bg-amber-50/60'
+                                : train.impact === 'DELAYED'
+                                ? 'border-rose-200 bg-rose-50/60'
+                                : 'border-slate-200 bg-slate-50/50'
+                            }`}
+                          >
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-bold text-slate-900">{train.trainId}</span>
+                                <span className="text-[11px] text-slate-500">({train.type})</span>
+                              </div>
+                              <p className="text-[11px] text-slate-600 truncate max-w-[220px]">{train.trainName}</p>
+                              <p className="text-[10px] text-slate-500">Expected passage: <strong className="text-slate-800">{train.scheduledTime}</strong></p>
+                            </div>
+                            <div>
+                              {train.impact === 'INSIDE_BLOCK' && (
+                                <Badge className="text-[10px] bg-amber-200/80 text-amber-900 border-amber-300 gap-1 font-bold">
+                                  <AlertTriangle className="w-3 h-3 text-amber-700" /> OVERLAPS BLOCK
+                                </Badge>
+                              )}
+                              {train.impact === 'DELAYED' && (
+                                <Badge className="text-[10px] bg-rose-200/80 text-rose-900 border-rose-300 gap-1 font-bold">
+                                  <Clock className="w-3 h-3 text-rose-700" /> DELAYED {train.delayMinutes}m
+                                </Badge>
+                              )}
+                              {train.impact === 'CLEAR' && (
+                                <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-300 gap-1">
+                                  <Check className="w-3 h-3 text-emerald-600" /> CLEAR
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Operational Disclaimer */}
+                    <div className="mt-2.5 p-2.5 bg-slate-100/90 rounded-lg border border-slate-200/80 text-[11px] text-slate-600 leading-relaxed">
+                      <strong className="text-slate-800 block mb-0.5 font-semibold">Control Office Coordination Principle:</strong>
+                      Before approval, RailSync shows the affected train movements and alternative maintenance windows. It does not autonomously reschedule trains; train handling remains with the Control Office.
+                    </div>
+                  </div>
+
+                  {/* Alternative Maintenance Windows */}
+                  {(alternativeWindowsByBlock[selectedBlock.id] || []).length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-xs font-semibold text-[#0F172A] tracking-normal">
+                            Alternative Maintenance Windows
+                          </h4>
+                          <span className="text-[10px] text-slate-500 font-mono">Options Evaluated</span>
+                        </div>
+                        <div className="space-y-2">
+                          {(alternativeWindowsByBlock[selectedBlock.id] || []).map((w, idx) => {
+                            const isAlt0530 = w.start === '05:30';
+                            return (
+                              <div
+                                key={idx}
+                                className="p-2.5 rounded-lg border border-teal-200/80 bg-teal-50/40 space-y-2"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-3.5 h-3.5 text-teal-700" />
+                                    <span className="font-mono font-bold text-xs text-slate-900">
+                                      {w.start} – {w.end}
+                                    </span>
+                                  </div>
+                                  <Badge className="text-[10px] bg-emerald-100 text-emerald-800 border-emerald-300">
+                                    Traffic Impact: {w.impact}
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 bg-white/70 p-1.5 rounded border border-teal-100 font-mono">
+                                  <div>Pass. Trains Affected: <strong className="text-slate-900">{isAlt0530 ? '0' : '1'}</strong></div>
+                                  <div>Goods Movements: <strong className="text-slate-900">{isAlt0530 ? '1' : '2'}</strong></div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full text-xs h-7 border-teal-300 text-teal-800 hover:bg-teal-100/60 font-medium gap-1"
+                                  onClick={() => {
+                                    const dur = calculateDuration(w.start, w.end);
+                                    const impactVal = (w.impact.charAt(0).toUpperCase() + w.impact.slice(1).toLowerCase()) as TrafficImpact;
+                                    const updates: Partial<PlanBlock> = {
+                                      start: w.start,
+                                      end: w.end,
+                                      durationMin: dur,
+                                      trafficImpact: impactVal,
+                                      isModified: true,
+                                      plannerNotes: `Shifted to alternative window ${w.start}–${w.end} to reduce train impact.`,
+                                    };
+                                    setEditStart(w.start);
+                                    setEditEnd(w.end);
+                                    setEditTraffic(impactVal);
+                                    setEditNotes(updates.plannerNotes || '');
+                                    modifyBlock(selectedBlock.id, updates);
+                                    setSelectedBlock((prev) => (prev ? { ...prev, ...updates } : null));
+                                    toast.success(`Block ${selectedBlock.id} moved to alternative window ${w.start}–${w.end}`);
+                                  }}
+                                >
+                                  <ArrowRight className="w-3 h-3 text-teal-600" />
+                                  Shift to this Window ({w.start}–{w.end})
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <Separator />
 

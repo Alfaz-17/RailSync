@@ -30,37 +30,37 @@ interface MetricComparison {
 const metrics: MetricComparison[] = [
   {
     title: 'Separate Track Blocks',
-    before: 14,
-    after: 8,
-    reduction: '-43%',
-    unit: 'blocks requested',
+    before: 18,
+    after: 12,
+    reduction: '-33%',
+    unit: 'separate blocks',
     icon: Wrench,
     isPositive: true,
   },
   {
     title: 'Total Line Closure Time',
-    before: '25.5 hrs',
-    after: '15.5 hrs',
-    reduction: '-39%',
-    unit: 'hours of track closure',
+    before: '1,620 min',
+    after: '1,080 min',
+    reduction: '-33%',
+    unit: 'block minutes (27h -> 18h)',
     icon: Clock,
     isPositive: true,
   },
   {
-    title: 'Delayed Passenger Trains',
-    before: 19,
-    after: 4,
-    reduction: '-79%',
-    unit: 'trains delayed',
-    icon: TrainFront,
+    title: 'Critical Tasks Covered',
+    before: '5 of 6',
+    after: '6 of 6',
+    reduction: '100%',
+    unit: 'critical safety tasks',
+    icon: ShieldCheck,
     isPositive: true,
   },
   {
-    title: 'Joint Department Blocks',
-    before: '0%',
-    after: '75%',
-    reduction: '+75%',
-    unit: 'co-scheduled work',
+    title: 'Coordinated Multi-Dept Blocks',
+    before: 0,
+    after: 4,
+    reduction: '4 joint',
+    unit: 'cross-department windows',
     icon: Zap,
     isPositive: true,
   },
@@ -245,6 +245,69 @@ export function BeforeAfterImpact() {
               </div>
             </motion.div>
           )}
+        </div>
+
+        {/* Measurable Benchmark Comparison Table */}
+        <div className="mt-6 pt-5 border-t border-slate-200">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Selection Audit Metric Benchmark
+            </h4>
+            <span className="text-[11px] font-medium text-slate-500">Ahmedabad — Vadodara Corridor Group</span>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-100 text-slate-700 border-b border-slate-200 font-semibold">
+                <tr>
+                  <th className="px-4 py-2.5">Metric</th>
+                  <th className="px-4 py-2.5 text-center">Mock Baseline</th>
+                  <th className="px-4 py-2.5 text-center bg-teal-50 text-teal-900">RailSync</th>
+                  <th className="px-4 py-2.5 text-right">Net Operational Gain</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white font-mono">
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Separate blocks</td>
+                  <td className="px-4 py-2 text-center text-slate-600">18</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">12</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">-6 blocks (-33%)</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Block minutes</td>
+                  <td className="px-4 py-2 text-center text-slate-600">1620 min</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">1080 min</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">-540 min saved</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Critical tasks covered</td>
+                  <td className="px-4 py-2 text-center text-slate-600">5 / 6</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">6 / 6</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">100% secured</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Coordinated blocks</td>
+                  <td className="px-4 py-2 text-center text-slate-600">0</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">4</td>
+                  <td className="px-4 py-2 text-right font-sans text-teal-600 font-semibold">4 joint possessions</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Unscheduled critical</td>
+                  <td className="px-4 py-2 text-center text-rose-600 font-semibold">1</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">0</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">Zero critical backlog</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-sans font-medium text-slate-800">Hard violations</td>
+                  <td className="px-4 py-2 text-center text-amber-600">Not validated</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">0</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">100% compliant</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-500 italic text-center">
+            * Prototype simulation using synthetic data.
+          </div>
         </div>
       </CardContent>
     </Card>

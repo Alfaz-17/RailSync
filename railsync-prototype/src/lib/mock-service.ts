@@ -21,3 +21,11 @@ export const optimizationSteps = [
   'Evaluating traffic impact',
   'Generating recommendation',
 ];
+
+export const reoptimizationSteps = [
+  'Checking updated availability',
+  'Preserving planner locks',
+  'Validating constraints',
+  'Evaluating alternatives',
+  'Generating revised recommendation',
+];
