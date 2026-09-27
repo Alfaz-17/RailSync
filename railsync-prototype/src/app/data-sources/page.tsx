@@ -11,8 +11,9 @@ import { MaintenanceTask, COAWindow } from '@/types/domain';
 import Link from 'next/link';
 import {
   Wrench, Radio, Zap, Clock, Package, CalendarCheck, ShieldCheck, Users, CheckCircle2, Eye,
-  Upload, FileText, RotateCcw, Sparkles, ArrowRight,
+  Upload, FileText, RotateCcw, Sparkles, ArrowRight, Download, FileSpreadsheet,
 } from 'lucide-react';
+import { parseTasksCsv, parseWindowsCsv, getSampleTasksCsv, getSampleWindowsCsv } from '@/lib/csv-parser';
 import { motion } from 'framer-motion';
 import { useState, useRef } from 'react';
 import { toast } from 'sonner';
@@ -167,11 +168,7 @@ const sampleBenchmarkDataset: { tasks: MaintenanceTask[]; windows: COAWindow[] }
       endIso: '2026-09-29T03:00',
     },
   ],
-import { parseTasksCsv, parseWindowsCsv, getSampleTasksCsv, getSampleWindowsCsv } from '@/lib/csv-parser';
-import {
-  Wrench, Radio, Zap, Clock, Package, CalendarCheck, ShieldCheck, Users, CheckCircle2, Eye,
-  Upload, FileText, RotateCcw, Sparkles, ArrowRight, Download, FileSpreadsheet,
-} from 'lucide-react';
+};
 
 export default function DataSourcesPage() {
   const { tasks, windows, importDataset, resetTasks, loadGoldenScenario } = usePrototypeStore();
