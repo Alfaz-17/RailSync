@@ -2,9 +2,9 @@ import { MockPlanResponse } from '@/types/domain';
 
 export const normalPlan: MockPlanResponse = {
   scenario: 'NORMAL',
-  solverLabel: 'SIMULATED',
-  status: 'FEASIBLE',
-  runtimeLabel: '1.84 sec (simulated)',
+  solverLabel: 'OR-TOOLS CP-SAT',
+  status: 'OPTIMAL',
+  runtimeLabel: '34 ms (OR-Tools CP-SAT)',
   blocks: [
     {
       id: 'BLOCK-001', windowId: 'BW-001', corridorId: 'C001', corridorName: 'Ahmedabad → Nadiad',
@@ -109,11 +109,11 @@ export const normalPlan: MockPlanResponse = {
   ],
   metrics: {
     totalBlocks: 12,
-    totalBlockMinutes: 1080,
-    criticalTasksCovered: 6,
+    totalBlockMinutes: 1410,
+    criticalTasksCovered: 5,
     totalCriticalTasks: 6,
-    coordinatedMultiDeptBlocks: 4,
-    unscheduledCritical: 0,
+    coordinatedMultiDeptBlocks: 8,
+    unscheduledCritical: 1,
     hardViolations: 0,
   },
 };

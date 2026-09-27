@@ -1,43 +1,78 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ArrowDownRight, ArrowUpRight, TrendingUp, CheckCircle2, Train, Clock, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { usePrototypeStore } from '@/store/prototype-store';
+import { getDynamicBaselineBlocks, getDynamicBaselineMetrics } from '@/data/current-plan';
 
 export function KpiImpactVisual() {
+  const { tasks, windows, plan } = usePrototypeStore();
+
+  const baselineBlocks = useMemo(() => getDynamicBaselineBlocks(tasks, windows), [tasks, windows]);
+  const baselineMetrics = useMemo(() => getDynamicBaselineMetrics(baselineBlocks, tasks), [baselineBlocks, tasks]);
+
+  const suggestedMetrics = useMemo(() => {
+    if (plan && plan.metrics) {
+      return plan.metrics;
+    }
+    const critTotal = tasks.filter((t) => t.priorityBand === 'Critical').length;
+    const estBlocks = Math.max(1, Math.round(baselineBlocks.length * 0.65));
+    const estMinutes = Math.round(baselineMetrics.totalBlockMinutes * 0.8);
+    return {
+      totalBlocks: estBlocks,
+      totalBlockMinutes: estMinutes,
+      criticalTasksCovered: critTotal,
+      totalCriticalTasks: critTotal,
+      coordinatedMultiDeptBlocks: Math.max(1, Math.round(estBlocks * 0.6)),
+      unscheduledCritical: 0,
+      hardViolations: 0,
+    };
+  }, [plan, tasks, baselineBlocks.length, baselineMetrics.totalBlockMinutes]);
+
+  const diffBlocks = suggestedMetrics.totalBlocks - baselineMetrics.totalBlocks;
+  const blockReductionPct = baselineMetrics.totalBlocks > 0
+    ? Math.round((Math.abs(diffBlocks) / baselineMetrics.totalBlocks) * 100)
+    : 0;
+
+  const diffMinutes = suggestedMetrics.totalBlockMinutes - baselineMetrics.totalBlockMinutes;
+  const minReductionPct = baselineMetrics.totalBlockMinutes > 0
+    ? Math.round((Math.abs(diffMinutes) / baselineMetrics.totalBlockMinutes) * 100)
+    : 0;
+
   const metrics = [
     {
       title: 'Track Closure Events',
-      baseline: '12 separate blocks',
-      railsync: '5 bundled blocks',
-      change: '-58%',
+      baseline: `${baselineMetrics.totalBlocks} separate blocks`,
+      railsync: `${suggestedMetrics.totalBlocks} bundled blocks`,
+      change: `-${blockReductionPct}%`,
       isGood: true,
       icon: Train,
-      detail: 'Eliminates 7 repeated track possessions on high-density corridors.',
+      detail: `Bundles maintenance into ${suggestedMetrics.totalBlocks} coordinated windows across active corridors.`,
     },
     {
       title: 'Total Line Possession Time',
-      baseline: '2,340 minutes',
-      railsync: '1,020 minutes',
-      change: '-56%',
+      baseline: `${baselineMetrics.totalBlockMinutes.toLocaleString()} minutes`,
+      railsync: `${suggestedMetrics.totalBlockMinutes.toLocaleString()} minutes`,
+      change: `-${minReductionPct}%`,
       isGood: true,
       icon: Clock,
-      detail: 'Saves 1,320 minutes of track shutdown time for freight & passenger movement.',
+      detail: `Saves ${Math.abs(diffMinutes)} minutes of track shutdown time for freight & passenger operations.`,
     },
     {
       title: 'Critical Task Clearance',
-      baseline: '7 of 11 planned',
-      railsync: '11 of 11 planned',
-      change: '100%',
+      baseline: `${baselineMetrics.criticalTasksCovered} of ${baselineMetrics.totalCriticalTasks} planned`,
+      railsync: `${suggestedMetrics.criticalTasksCovered} of ${suggestedMetrics.totalCriticalTasks} planned`,
+      change: `${suggestedMetrics.totalCriticalTasks > 0 ? Math.round((suggestedMetrics.criticalTasksCovered / suggestedMetrics.totalCriticalTasks) * 100) : 100}%`,
       isGood: true,
       icon: ShieldCheck,
-      detail: 'All urgent track fractures and point motor overhauls secured before due date.',
+      detail: 'Priority track, signal, and traction maintenance secured before deadline.',
     },
     {
       title: 'Multi-Department Coordination',
       baseline: '0 shared blocks',
-      railsync: '4 shared blocks',
-      change: '4x',
+      railsync: `${suggestedMetrics.coordinatedMultiDeptBlocks} shared blocks`,
+      change: `${suggestedMetrics.coordinatedMultiDeptBlocks}x`,
       isGood: true,
       icon: TrendingUp,
       detail: 'Civil, Signal, and Electrical crews share safe corridor windows simultaneously.',

@@ -7,14 +7,18 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { tasks } from '@/data/tasks';
+import { usePrototypeStore } from '@/store/prototype-store';
 import { MaintenanceTask, Department, PriorityBand } from '@/types/domain';
 import { formatDuration, getDueStatusLabel, getDueStatus } from '@/lib/format';
-import { Search, ArrowUpDown, Info } from 'lucide-react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { toast } from 'sonner';
 
 const deptColors: Record<Department, string> = {
   Engineering: '#1473E6',
@@ -37,13 +41,40 @@ const statusColors: Record<string, { bg: string; text: string; border: string }>
   CANCELLED: { bg: '#D94B4510', text: '#D94B45', border: '#D94B4530' },
 };
 
-export default function TasksPage() {
+const corridorMap: Record<string, string> = {
+  C001: 'Ahmedabad → Nadiad',
+  C002: 'Nadiad → Vadodara',
+  C003: 'Vadodara → Surat',
+  C004: 'Surat → Mumbai Central',
+  C005: 'Mumbai Central → Churchgate',
+};
+
+function TasksContent() {
+  const { tasks, addTask, deleteTask } = usePrototypeStore();
+  const searchParams = useSearchParams();
+  const corridorParam = searchParams.get('corridor');
+
   const [search, setSearch] = useState('');
   const [deptTab, setDeptTab] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [corridorFilter, setCorridorFilter] = useState<string>('all');
+  const [corridorFilter, setCorridorFilter] = useState<string>(corridorParam || 'all');
   const [sortDesc, setSortDesc] = useState(true);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
+
+  useEffect(() => {
+    if (corridorParam) {
+      setCorridorFilter(corridorParam);
+    }
+  }, [corridorParam]);
+
+  // Add Task Modal State
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDept, setNewDept] = useState<Department>('Engineering');
+  const [newCorridor, setNewCorridor] = useState('C001');
+  const [newDuration, setNewDuration] = useState('90');
+  const [newPriority, setNewPriority] = useState<PriorityBand>('High');
+  const [newResource, setNewResource] = useState('Track Gang A');
 
   const filtered = useMemo(() => {
     let result = [...tasks];
@@ -51,7 +82,10 @@ export default function TasksPage() {
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
-        (t) => t.id.toLowerCase().includes(q) || t.title.toLowerCase().includes(q) || t.corridorName.toLowerCase().includes(q)
+        (t) =>
+          t.id.toLowerCase().includes(q) ||
+          t.title.toLowerCase().includes(q) ||
+          t.corridorName.toLowerCase().includes(q)
       );
     }
     if (deptTab !== 'all') {
@@ -64,25 +98,83 @@ export default function TasksPage() {
       result = result.filter((t) => t.corridorId === corridorFilter);
     }
 
-    result.sort((a, b) => (sortDesc ? b.priorityScore - a.priorityScore : a.priorityScore - b.priorityScore));
+    result.sort((a, b) =>
+      sortDesc ? b.priorityScore - a.priorityScore : a.priorityScore - b.priorityScore
+    );
 
     return result;
-  }, [search, deptTab, priorityFilter, corridorFilter, sortDesc]);
+  }, [tasks, search, deptTab, priorityFilter, corridorFilter, sortDesc]);
 
   const corridors = [...new Set(tasks.map((t) => t.corridorId))].sort();
+
+  function handleCreateTask() {
+    if (!newTitle.trim()) {
+      toast.error('Please enter a task title');
+      return;
+    }
+
+    const dur = parseInt(newDuration, 10) || 90;
+    const pScore = newPriority === 'Critical' ? 95 : newPriority === 'High' ? 80 : newPriority === 'Medium' ? 60 : 40;
+    const prefix = newDept === 'Engineering' ? 'ENG' : newDept === 'Signal' ? 'SIG' : 'TRD';
+    const randomNum = Math.floor(100 + Math.random() * 900);
+    const newId = `${prefix}-USR-${randomNum}`;
+
+    const createdTask: MaintenanceTask = {
+      id: newId,
+      source: newDept === 'Engineering' ? 'TMS' : newDept === 'Signal' ? 'SMMS' : 'TDMS',
+      department: newDept,
+      corridorId: newCorridor,
+      corridorName: corridorMap[newCorridor] || 'Ahmedabad → Nadiad',
+      title: newTitle.trim(),
+      durationMin: dur,
+      priorityScore: pScore,
+      priorityBand: newPriority,
+      status: 'PENDING',
+      dueDate: '2026-09-30',
+      criticality: pScore >= 80 ? 9 : 6,
+      urgency: pScore >= 80 ? 9 : 6,
+      safetyImpact: pScore >= 80 ? 9 : 5,
+      availabilityImpact: 7,
+      requiredState: 'Track Possession',
+      requiredResource: newResource,
+      notes: 'Custom task created by user in active workbank',
+    };
+
+    addTask(createdTask);
+    setIsAddOpen(false);
+    setNewTitle('');
+    toast.success(`Task ${newId} added to active workbank! Run Build a Plan to schedule it.`);
+  }
 
   return (
     <div>
       <Topbar title="Maintenance Workbank" description="All track, signal, and traction work in one place." />
 
       <div className="page-content space-y-4">
-        <section className="page-intro">
+        <section className="page-intro flex-wrap gap-4">
           <div>
             <div className="eyebrow">TMS + SMMS + TDMS Integration</div>
             <h2>What maintenance needs work?</h2>
             <p>Filter tasks by department, priority, or corridor. Click a row to open the detail drawer.</p>
           </div>
-          <Badge variant="outline" className="text-xs font-semibold">{tasks.length} tasks loaded</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs font-semibold">{tasks.length} tasks loaded</Badge>
+            <Button
+              size="sm"
+              className="bg-[#235b80] hover:bg-[#1d4e70] text-white gap-1.5 h-9 text-xs font-medium"
+              onClick={() => setIsAddOpen(true)}
+            >
+              <Plus className="w-4 h-4" /> Add Task
+            </Button>
+            <Link href="/optimize">
+              <Button
+                size="sm"
+                className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1.5 h-9 text-xs font-semibold"
+              >
+                Build Plan ({tasks.length}) <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          </div>
         </section>
 
         {/* Department Tab Filters */}
@@ -101,14 +193,15 @@ export default function TasksPage() {
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted-foreground)]" />
               <Input
-                aria-label="Search maintenance tasks" placeholder="Search by task ID, title, or corridor…"
+                aria-label="Search maintenance tasks"
+                placeholder="Search by task ID, title, or corridor…"
                 className="pl-9 text-sm h-10"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v || 'all')}>
-              <SelectTrigger aria-label="Priority" className="w-[140px] text-sm h-10">
+              <SelectTrigger className="w-[140px] text-xs h-10">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent>
@@ -120,91 +213,116 @@ export default function TasksPage() {
               </SelectContent>
             </Select>
             <Select value={corridorFilter} onValueChange={(v) => setCorridorFilter(v || 'all')}>
-              <SelectTrigger aria-label="Corridor" className="w-[150px] text-sm h-10">
+              <SelectTrigger className="w-[160px] text-xs h-10">
                 <SelectValue placeholder="Corridor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All corridors</SelectItem>
+                <SelectItem value="all">All Corridors</SelectItem>
                 {corridors.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>{c} ({corridorMap[c] || c})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 text-xs h-10"
+              className="text-xs h-10 gap-1.5"
               onClick={() => setSortDesc(!sortDesc)}
             >
-              <ArrowUpDown className="w-3.5 h-3.5" />
-              Priority {sortDesc ? '↓' : '↑'}
+              <ArrowUpDown size={14} />
+              {sortDesc ? 'Highest score' : 'Lowest score'}
             </Button>
-            <Badge variant="secondary" className="text-xs">
-              {filtered.length} of {tasks.length}
-            </Badge>
           </div>
         </div>
 
-        {/* Table */}
-        <div className="rounded-xl border border-[var(--border)] bg-white overflow-hidden">
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-[var(--muted)] border-b border-[var(--border)]">
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Task</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Department</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Corridor</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Work</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Duration</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Priority</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Status</th>
-                  <th className="text-left px-4 py-3 font-semibold text-[var(--foreground)] text-xs">Due</th>
+        {/* Tasks Table */}
+        <div className="rounded-xl border border-[var(--border)] bg-white overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[var(--muted)] text-[var(--muted-foreground)] border-b border-[var(--border)]">
+                <tr>
+                  <th className="py-3 px-4 font-medium text-xs">ID</th>
+                  <th className="py-3 px-4 font-medium text-xs">Title</th>
+                  <th className="py-3 px-4 font-medium text-xs">Dept</th>
+                  <th className="py-3 px-4 font-medium text-xs">Corridor</th>
+                  <th className="py-3 px-4 font-medium text-xs text-right">Duration</th>
+                  <th className="py-3 px-4 font-medium text-xs text-center">Priority</th>
+                  <th className="py-3 px-4 font-medium text-xs text-center">Due Status</th>
+                  <th className="py-3 px-4 font-medium text-xs">Resource</th>
+                  <th className="py-3 px-4 font-medium text-xs text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {filtered.length === 0 && <tr><td colSpan={8} className="p-10 text-center text-sm text-[var(--muted-foreground)]">No tasks match these filters. Try another search or department.</td></tr>}
-                {filtered.map((task, i) => {
+              <tbody className="divide-y divide-[var(--border)]">
+                {filtered.map((task) => {
                   const dueStatus = getDueStatus(task.dueDate);
-                  const sColors = statusColors[task.status] || statusColors.PENDING;
+                  const isUserAdded = task.id.includes('USR');
                   return (
-                    <motion.tr
+                    <tr
                       key={task.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.015 }}
-                      className="border-b border-[var(--border)] hover:bg-[var(--muted)] cursor-pointer transition-colors h-[52px]"
-                      role="button" tabIndex={0}
-                      aria-label={`Open task ${task.id}: ${task.title}`}
-                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); setSelectedTask(task); } }}
+                      className="hover:bg-slate-50 transition-colors cursor-pointer"
                       onClick={() => setSelectedTask(task)}
                     >
-                      <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--foreground)]">{task.id}</td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className="text-xs font-medium" style={{ color: deptColors[task.department], borderColor: `${deptColors[task.department]}40` }}>
-                          {task.department === 'Signal' ? 'S&T' : task.department}
+                      <td className="py-3 px-4 font-mono font-semibold text-xs text-[var(--foreground)]">
+                        {task.id}
+                        {isUserAdded && (
+                          <span className="ml-1 px-1 py-0.5 text-[9px] bg-teal-100 text-teal-800 rounded font-bold">NEW</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-medium text-[var(--foreground)]">{task.title}</td>
+                      <td className="py-3 px-4">
+                        <Badge
+                          variant="outline"
+                          className="text-[11px] font-semibold"
+                          style={{ color: deptColors[task.department], borderColor: `${deptColors[task.department]}40` }}
+                        >
+                          {task.department}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-xs text-[var(--muted-foreground)]">{task.corridorId}</td>
-                      <td className="px-4 py-3 text-xs font-medium text-[var(--foreground)]">{task.title}</td>
-                      <td className="px-4 py-3 text-xs text-[var(--muted-foreground)] font-mono">{formatDuration(task.durationMin)}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Badge className="text-xs px-1.5 py-0" style={{ backgroundColor: `${priorityColors[task.priorityBand]}12`, color: priorityColors[task.priorityBand], border: `1px solid ${priorityColors[task.priorityBand]}30` }}>
-                            {task.priorityBand}
-                          </Badge>
-                        </div>
+                      <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">
+                        <span className="font-mono">{task.corridorId}</span> · {task.corridorName}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge className="text-xs" style={{ backgroundColor: sColors.bg, color: sColors.text, border: `1px solid ${sColors.border}` }}>
-                          {task.status}
-                        </Badge>
+                      <td className="py-3 px-4 text-right font-mono text-xs text-[var(--foreground)]">
+                        {formatDuration(task.durationMin)}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className={`text-xs ${dueStatus === 'overdue' ? 'text-[#D94B45] border-[#D94B4540] bg-[#D94B4508]' : dueStatus === 'today' ? 'text-[#F28C18] border-[#F28C1840] bg-[#F28C1808]' : 'text-[var(--muted-foreground)] border-[var(--border)]'}`}>
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className="inline-block px-2 py-0.5 rounded text-xs font-bold font-mono"
+                          style={{ backgroundColor: `${priorityColors[task.priorityBand]}15`, color: priorityColors[task.priorityBand] }}
+                        >
+                          P{task.priorityScore}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <Badge
+                          className={`text-[11px] ${
+                            dueStatus === 'overdue'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : dueStatus === 'today'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-slate-50 text-slate-600 border-slate-200'
+                          }`}
+                        >
                           {getDueStatusLabel(task.dueDate)}
                         </Badge>
                       </td>
-                    </motion.tr>
+                      <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">{task.requiredResource}</td>
+                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                        {isUserAdded && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50"
+                            onClick={() => {
+                              deleteTask(task.id);
+                              toast.info(`Task ${task.id} removed`);
+                            }}
+                            title="Remove task"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -213,98 +331,197 @@ export default function TasksPage() {
         </div>
       </div>
 
+      {/* Add Task Dialog */}
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900">Add Maintenance Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3.5 py-2 text-xs">
+            <div>
+              <label className="font-semibold text-slate-800 block mb-1">Task Title *</label>
+              <Input
+                placeholder="e.g. Ultrasonic Rail Flaw Detection (USFD)"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="text-xs h-9"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Department</label>
+                <Select value={newDept} onValueChange={(v) => setNewDept(v as Department)}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Engineering">Engineering</SelectItem>
+                    <SelectItem value="Signal">Signal & Telecom</SelectItem>
+                    <SelectItem value="Traction">Traction (TRD)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Corridor</label>
+                <Select value={newCorridor} onValueChange={(v) => { if (v) setNewCorridor(v); }}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(corridorMap).map(([id, name]) => (
+                      <SelectItem key={id} value={id}>{id}: {name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Duration (minutes)</label>
+                <Input
+                  type="number"
+                  min="30"
+                  max="360"
+                  step="15"
+                  value={newDuration}
+                  onChange={(e) => setNewDuration(e.target.value)}
+                  className="text-xs h-9 font-mono"
+                />
+              </div>
+              <div>
+                <label className="font-semibold text-slate-800 block mb-1">Priority Band</label>
+                <Select value={newPriority} onValueChange={(v) => setNewPriority(v as PriorityBand)}>
+                  <SelectTrigger className="text-xs h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Critical">Critical (P95)</SelectItem>
+                    <SelectItem value="High">High (P80)</SelectItem>
+                    <SelectItem value="Medium">Medium (P60)</SelectItem>
+                    <SelectItem value="Low">Low (P40)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <label className="font-semibold text-slate-800 block mb-1">Required Equipment / Gang</label>
+              <Input
+                placeholder="e.g. Track Gang A, Tamping Machine, Signal Crew 1"
+                value={newResource}
+                onChange={(e) => setNewResource(e.target.value)}
+                className="text-xs h-9"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" size="sm" onClick={() => setIsAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="sm" className="bg-[#235b80] hover:bg-[#1d4e70] text-white" onClick={handleCreateTask}>
+              Add to Workbank
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Task Detail Sheet */}
       <Sheet open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-        <SheetContent className="w-full sm:max-w-[440px]">
+        <SheetContent className="w-full sm:max-w-[440px] overflow-y-auto">
           {selectedTask && (
             <>
               <SheetHeader>
-                <SheetTitle className="flex items-center gap-2 text-base">
-                  <span className="font-mono">{selectedTask.id}</span>
-                  <Badge variant="outline" className="text-xs" style={{ color: deptColors[selectedTask.department], borderColor: `${deptColors[selectedTask.department]}40` }}>
-                    {selectedTask.department === 'Signal' ? 'S&T' : selectedTask.department}
+                <SheetTitle className="text-base font-bold flex items-center justify-between">
+                  <span>{selectedTask.id}</span>
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold"
+                    style={{ color: deptColors[selectedTask.department], borderColor: `${deptColors[selectedTask.department]}40` }}
+                  >
+                    {selectedTask.department}
                   </Badge>
                 </SheetTitle>
               </SheetHeader>
-
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 space-y-4 text-xs">
                 <div>
-                  <h3 className="text-lg font-semibold text-[var(--foreground)]">{selectedTask.title}</h3>
-                  <p className="text-sm text-[var(--muted-foreground)] mt-1">{selectedTask.corridorName} · {selectedTask.source}</p>
+                  <h4 className="font-semibold text-slate-900 text-sm mb-1">{selectedTask.title}</h4>
+                  <p className="text-slate-500">{selectedTask.corridorId} · {selectedTask.corridorName}</p>
                 </div>
-
-                {selectedTask.notes && (
-                  <div className="bg-[#F28C1808] border border-[#F28C1830] rounded-lg p-3">
-                    <p className="text-xs text-[#C28012]">{selectedTask.notes}</p>
-                  </div>
-                )}
-
                 <Separator />
-
-                {/* Priority Breakdown */}
-                <div>
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Info className="w-4 h-4 text-[var(--rail-blue)]" />
-                    <h4 className="text-sm font-semibold text-[var(--foreground)]">Why this priority?</h4>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="text-[var(--muted-foreground)] cursor-help">ⓘ</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs max-w-[200px]">Priority Score combines criticality, urgency, safety impact, and effect on train availability.</p>
-                      </TooltipContent>
-                    </Tooltip>
+                <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <div>
+                    <span className="text-slate-500 block text-[10px] uppercase font-semibold">Duration</span>
+                    <span className="font-bold text-slate-900 font-mono text-sm">{formatDuration(selectedTask.durationMin)}</span>
                   </div>
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Importance', value: selectedTask.criticality },
-                      { label: 'Urgency', value: selectedTask.urgency },
-                      { label: 'Safety Impact', value: selectedTask.safetyImpact },
-                      { label: 'Effect on train service', value: selectedTask.availabilityImpact },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center justify-between">
-                        <span className="text-xs text-[var(--muted-foreground)]">{item.label}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-[var(--muted)] rounded-full h-2 overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{ width: `${item.value * 10}%`, backgroundColor: 'var(--rail-blue)' }}
-                            />
-                          </div>
-                          <span className="text-xs font-semibold text-[var(--foreground)] w-8 text-right">{item.value}/10</span>
-                        </div>
-                      </div>
-                    ))}
+                  <div>
+                    <span className="text-slate-500 block text-[10px] uppercase font-semibold">Priority Score</span>
+                    <span className="font-bold font-mono text-sm" style={{ color: priorityColors[selectedTask.priorityBand] }}>
+                      P{selectedTask.priorityScore} ({selectedTask.priorityBand})
+                    </span>
                   </div>
-                  <div className="mt-3 bg-[var(--muted)] rounded-lg p-3">
-                    <p className="text-xs text-[var(--muted-foreground)]">
-                      Priority Score: <span className="font-bold text-[var(--foreground)]">{selectedTask.priorityScore}</span>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-slate-500 block text-[10px] uppercase font-semibold">Priority Evidence Breakdown</span>
+                  <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Criticality (30%)</span>
+                      <span className="font-mono font-bold text-slate-900">{selectedTask.criticality * 10}/100</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Urgency (25%)</span>
+                      <span className="font-mono font-bold text-slate-900">{selectedTask.urgency * 10}/100</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Safety Impact (20%)</span>
+                      <span className="font-mono font-bold text-slate-900">{selectedTask.safetyImpact * 10}/100</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Availability Impact (15%)</span>
+                      <span className="font-mono font-bold text-slate-900">{selectedTask.availabilityImpact * 10}/100</span>
+                    </div>
+                    <div className="flex justify-between text-slate-600">
+                      <span>Overdue Severity (10%)</span>
+                      <span className="font-mono font-bold text-slate-900">80/100</span>
+                    </div>
+                    <Separator className="my-1" />
+                    <div className="flex justify-between font-bold text-slate-900">
+                      <span>Final Priority Score</span>
+                      <span className="font-mono text-rose-700">{selectedTask.priorityScore} — {selectedTask.priorityBand}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 italic pt-1">
+                      Priority determines importance, not feasibility. A high-priority task still cannot violate hard safety or operational constraints.
                     </p>
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Details */}
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Duration', value: formatDuration(selectedTask.durationMin) },
-                    { label: 'Status', value: selectedTask.status },
-                    { label: 'Track conditions', value: selectedTask.requiredState },
-                    { label: 'Crew or equipment', value: selectedTask.requiredResource },
-                    { label: 'Due Date', value: selectedTask.dueDate },
-                  ].map(item => (
-                    <div key={item.label} className="flex justify-between text-xs">
-                      <span className="text-[var(--muted-foreground)]">{item.label}</span>
-                      <span className="font-medium text-[var(--foreground)]">{item.value}</span>
-                    </div>
-                  ))}
+                <div className="space-y-2">
+                  <span className="text-slate-500 block text-[10px] uppercase font-semibold">Operational Requirements</span>
+                  <div className="p-2.5 rounded bg-slate-50 border border-slate-200 space-y-1">
+                    <p><strong className="text-slate-700">Required State:</strong> {selectedTask.requiredState}</p>
+                    <p><strong className="text-slate-700">Required Resource:</strong> {selectedTask.requiredResource}</p>
+                    <p><strong className="text-slate-700">Source System:</strong> {selectedTask.source}</p>
+                  </div>
                 </div>
+                {selectedTask.notes && (
+                  <div>
+                    <span className="text-slate-500 block text-[10px] uppercase font-semibold mb-1">Inspector Notes</span>
+                    <p className="p-2.5 rounded bg-amber-50/70 border border-amber-200 text-amber-900 italic">
+                      {selectedTask.notes}
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
     </div>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-slate-500 font-mono">Loading maintenance workbank...</div>}>
+      <TasksContent />
+    </Suspense>
   );
 }

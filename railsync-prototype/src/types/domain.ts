@@ -63,6 +63,9 @@ export interface COAWindow {
   durationMin: number;
   availability: WindowAvailability;
   dayOfWeek: string;
+  date?: string;
+  startIso?: string;
+  endIso?: string;
 }
 
 // ─── Plan Block ──────────────────────────────────────────────────────
@@ -79,6 +82,7 @@ export interface PlanBlock {
   departments: Department[];
   trafficImpact: TrafficImpact;
   reasons: string[];
+  isLocked?: boolean;
   isModified?: boolean;
   plannerNotes?: string;
 }
@@ -141,17 +145,38 @@ export interface PrototypeMetrics {
   hardViolations: number | null;
 }
 
-// ─── Mock Plan Response ──────────────────────────────────────────────
+// ─── Validation & Audit ──────────────────────────────────────────────
+
+export interface ValidationError {
+  code: string;
+  message: string;
+  affectedIds?: string[];
+}
+
+export interface PlanAuditEvent {
+  id: string;
+  timestamp: string;
+  action: 'OPTIMIZED' | 'REOPTIMIZED' | 'BLOCK_MODIFIED' | 'BLOCK_LOCKED' | 'BLOCK_UNLOCKED' | 'APPROVED' | 'REJECTED' | 'REOPENED';
+  actor: string;
+  details: string;
+}
+
+// ─── Plan Response ───────────────────────────────────────────────────
 
 export interface MockPlanResponse {
   scenario: 'NORMAL' | 'COA_DISRUPTION';
-  solverLabel: 'SIMULATED';
-  status: 'FEASIBLE';
+  solverLabel: string;
+  status: 'OPTIMAL' | 'FEASIBLE' | 'INFEASIBLE' | 'UNKNOWN' | 'ERROR';
   runtimeLabel: string;
+  version?: number;
   blocks: PlanBlock[];
   unscheduled: UnscheduledTask[];
   metrics: PrototypeMetrics;
+  validationErrors?: string[];
+  auditEvents?: PlanAuditEvent[];
 }
+
+export type PlanResponse = MockPlanResponse;
 
 // ─── Data Source Card ────────────────────────────────────────────────
 

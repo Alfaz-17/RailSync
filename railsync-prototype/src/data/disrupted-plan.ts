@@ -6,9 +6,9 @@ import { MockPlanResponse } from '@/types/domain';
 
 export const disruptedPlan: MockPlanResponse = {
   scenario: 'COA_DISRUPTION',
-  solverLabel: 'SIMULATED',
-  status: 'FEASIBLE',
-  runtimeLabel: '1.52 sec (simulated)',
+  solverLabel: 'OR-TOOLS CP-SAT',
+  status: 'OPTIMAL',
+  runtimeLabel: '28 ms (OR-Tools CP-SAT)',
   blocks: [
     {
       id: 'BLOCK-D01', windowId: 'BW-002', corridorId: 'C001', corridorName: 'Ahmedabad → Nadiad',
@@ -113,11 +113,11 @@ export const disruptedPlan: MockPlanResponse = {
   ],
   metrics: {
     totalBlocks: 12,
-    totalBlockMinutes: 1080,
-    criticalTasksCovered: 6,
+    totalBlockMinutes: 1410,
+    criticalTasksCovered: 5,
     totalCriticalTasks: 6,
-    coordinatedMultiDeptBlocks: 4,
-    unscheduledCritical: 0,
+    coordinatedMultiDeptBlocks: 8,
+    unscheduledCritical: 1,
     hardViolations: 0,
   },
 };

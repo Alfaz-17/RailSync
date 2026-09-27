@@ -3,7 +3,9 @@
 import { Topbar } from '@/components/app-shell/topbar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { fragmentedBlocks } from '@/data/current-plan';
+import { useMemo } from 'react';
+import { usePrototypeStore } from '@/store/prototype-store';
+import { getDynamicBaselineBlocks } from '@/data/current-plan';
 import { summarizeBlocks } from '@/lib/plan-summary';
 import { TimelineView, fragmentedToTimeline } from '@/components/timeline-view';
 import { ArrowRight, AlertCircle } from 'lucide-react';
@@ -12,10 +14,26 @@ import { motion } from 'framer-motion';
 
 import { ShadowBlockDiagram } from '@/components/visualizations/shadow-block-diagram';
 
-const corridors = [...new Set(fragmentedBlocks.map((b) => b.corridorId))].sort();
-
 export default function CurrentPlanPage() {
-  const summary = summarizeBlocks(fragmentedBlocks.map(block => ({ ...block, taskIds: [block.taskId], departments: [block.department] })));
+  const { tasks, windows } = usePrototypeStore();
+  const currentBlocks = useMemo(() => getDynamicBaselineBlocks(tasks, windows), [tasks, windows]);
+  const corridors = useMemo(() => [...new Set(currentBlocks.map((b) => b.corridorId))].sort(), [currentBlocks]);
+
+  const summary = useMemo(() => {
+    const criticalTasks = tasks.filter((t) => t.priorityBand === 'Critical');
+    const criticalInBlocks = currentBlocks.filter((b) => {
+      const t = tasks.find((tk) => tk.id === b.taskId);
+      return t?.priorityBand === 'Critical';
+    });
+
+    return {
+      blockCount: currentBlocks.length,
+      totalMinutes: currentBlocks.reduce((acc, b) => acc + b.durationMin, 0),
+      criticalPlanned: criticalInBlocks.length,
+      criticalTotal: criticalTasks.length,
+      sharedBlocks: 0,
+    };
+  }, [currentBlocks, tasks]);
 
   return (
     <div>
@@ -24,7 +42,7 @@ export default function CurrentPlanPage() {
       <div className="page-content space-y-6">
         <section className="page-intro">
           <div>
-            <div className="eyebrow">Before shared planning</div>
+            <div className="eyebrow">Before shared planning · {tasks.length} Active Tasks</div>
             <h2>What is wrong with planning today?</h2>
             <p>Each department plans independently. Highlighted tasks overlap on the same corridor and could share a single block.</p>
           </div>
@@ -55,12 +73,12 @@ export default function CurrentPlanPage() {
         </div>
 
         <Badge className="text-xs font-semibold bg-[#F28C1810] text-[#C28012] border border-[#F28C1830] py-1 px-3">
-          Sample plan · Before coordination
+          Uncoordinated Baseline · {currentBlocks.length} Separate Department Requests
         </Badge>
 
         {/* Timeline per corridor — using the new TimelineView component */}
         {corridors.map((corridorId) => {
-          const corridorBlocks = fragmentedBlocks.filter((b) => b.corridorId === corridorId);
+          const corridorBlocks = currentBlocks.filter((b) => b.corridorId === corridorId);
           const corridorName = corridorBlocks[0]?.corridorName || corridorId;
           const timelineBlocks = fragmentedToTimeline(corridorBlocks);
           const hasCoordOpp = corridorBlocks.some(b => b.hasCoordinationOpportunity);

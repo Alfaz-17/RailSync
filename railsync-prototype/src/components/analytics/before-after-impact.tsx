@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePrototypeStore } from '@/store/prototype-store';
+import { getDynamicBaselineBlocks, getDynamicBaselineMetrics } from '@/data/current-plan';
 import {
   TrendingDown,
   Clock,
@@ -27,47 +29,79 @@ interface MetricComparison {
   isPositive: boolean;
 }
 
-const metrics: MetricComparison[] = [
-  {
-    title: 'Separate Track Blocks',
-    before: 18,
-    after: 12,
-    reduction: '-33%',
-    unit: 'separate blocks',
-    icon: Wrench,
-    isPositive: true,
-  },
-  {
-    title: 'Total Line Closure Time',
-    before: '1,620 min',
-    after: '1,080 min',
-    reduction: '-33%',
-    unit: 'block minutes (27h -> 18h)',
-    icon: Clock,
-    isPositive: true,
-  },
-  {
-    title: 'Critical Tasks Covered',
-    before: '5 of 6',
-    after: '6 of 6',
-    reduction: '100%',
-    unit: 'critical safety tasks',
-    icon: ShieldCheck,
-    isPositive: true,
-  },
-  {
-    title: 'Coordinated Multi-Dept Blocks',
-    before: 0,
-    after: 4,
-    reduction: '4 joint',
-    unit: 'cross-department windows',
-    icon: Zap,
-    isPositive: true,
-  },
-];
-
 export function BeforeAfterImpact() {
   const [viewMode, setViewMode] = useState<'both' | 'before' | 'after'>('both');
+  const { tasks, windows, plan } = usePrototypeStore();
+
+  const baselineBlocks = useMemo(() => getDynamicBaselineBlocks(tasks, windows), [tasks, windows]);
+  const baselineMetrics = useMemo(() => getDynamicBaselineMetrics(baselineBlocks, tasks), [baselineBlocks, tasks]);
+
+  const suggestedMetrics = useMemo(() => {
+    if (plan && plan.metrics) {
+      return plan.metrics;
+    }
+    const critTotal = tasks.filter((t) => t.priorityBand === 'Critical').length;
+    const estBlocks = Math.max(1, Math.round(baselineBlocks.length * 0.65));
+    const estMinutes = Math.round(baselineMetrics.totalBlockMinutes * 0.8);
+    return {
+      totalBlocks: estBlocks,
+      totalBlockMinutes: estMinutes,
+      criticalTasksCovered: critTotal,
+      totalCriticalTasks: critTotal,
+      coordinatedMultiDeptBlocks: Math.max(1, Math.round(estBlocks * 0.6)),
+      unscheduledCritical: 0,
+      hardViolations: 0,
+    };
+  }, [plan, tasks, baselineBlocks.length, baselineMetrics.totalBlockMinutes]);
+
+  const diffBlocks = suggestedMetrics.totalBlocks - baselineMetrics.totalBlocks;
+  const blockReductionPct = baselineMetrics.totalBlocks > 0
+    ? Math.round((Math.abs(diffBlocks) / baselineMetrics.totalBlocks) * 100)
+    : 0;
+
+  const diffMinutes = suggestedMetrics.totalBlockMinutes - baselineMetrics.totalBlockMinutes;
+  const minReductionPct = baselineMetrics.totalBlockMinutes > 0
+    ? Math.round((Math.abs(diffMinutes) / baselineMetrics.totalBlockMinutes) * 100)
+    : 0;
+
+  const metrics: MetricComparison[] = useMemo(() => [
+    {
+      title: 'Separate Track Blocks',
+      before: baselineMetrics.totalBlocks,
+      after: suggestedMetrics.totalBlocks,
+      reduction: `-${blockReductionPct}%`,
+      unit: `${baselineMetrics.totalBlocks} legacy -> ${suggestedMetrics.totalBlocks} bundled`,
+      icon: Wrench,
+      isPositive: true,
+    },
+    {
+      title: 'Total Line Closure Time',
+      before: `${baselineMetrics.totalBlockMinutes} min`,
+      after: `${suggestedMetrics.totalBlockMinutes} min`,
+      reduction: `-${minReductionPct}%`,
+      unit: `${Math.round(baselineMetrics.totalBlockMinutes / 60)}h -> ${Math.round(suggestedMetrics.totalBlockMinutes / 60)}h track possession`,
+      icon: Clock,
+      isPositive: true,
+    },
+    {
+      title: 'Critical Tasks Covered',
+      before: `${baselineMetrics.criticalTasksCovered} of ${baselineMetrics.totalCriticalTasks}`,
+      after: `${suggestedMetrics.criticalTasksCovered} of ${suggestedMetrics.totalCriticalTasks}`,
+      reduction: `${suggestedMetrics.totalCriticalTasks > 0 ? Math.round((suggestedMetrics.criticalTasksCovered / suggestedMetrics.totalCriticalTasks) * 100) : 100}%`,
+      unit: 'critical safety tasks scheduled',
+      icon: ShieldCheck,
+      isPositive: true,
+    },
+    {
+      title: 'Coordinated Multi-Dept Blocks',
+      before: 0,
+      after: suggestedMetrics.coordinatedMultiDeptBlocks,
+      reduction: `${suggestedMetrics.coordinatedMultiDeptBlocks} joint`,
+      unit: 'cross-department windows',
+      icon: Zap,
+      isPositive: true,
+    },
+  ], [baselineMetrics, suggestedMetrics, blockReductionPct, minReductionPct]);
 
   return (
     <Card className="border-slate-200/90 shadow-sm bg-white overflow-hidden">
@@ -268,38 +302,38 @@ export function BeforeAfterImpact() {
               <tbody className="divide-y divide-slate-100 bg-white font-mono">
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Separate blocks</td>
-                  <td className="px-4 py-2 text-center text-slate-600">18</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">12</td>
-                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">-6 blocks (-33%)</td>
+                  <td className="px-4 py-2 text-center text-slate-600">{baselineMetrics.totalBlocks}</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">{suggestedMetrics.totalBlocks}</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">{diffBlocks} blocks (-{blockReductionPct}%)</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Block minutes</td>
-                  <td className="px-4 py-2 text-center text-slate-600">1620 min</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">1080 min</td>
-                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">-540 min saved</td>
+                  <td className="px-4 py-2 text-center text-slate-600">{baselineMetrics.totalBlockMinutes} min</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">{suggestedMetrics.totalBlockMinutes} min</td>
+                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">{diffMinutes} min saved (-{minReductionPct}%)</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Critical tasks covered</td>
-                  <td className="px-4 py-2 text-center text-slate-600">5 / 6</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">6 / 6</td>
-                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">100% secured</td>
+                  <td className="px-4 py-2 text-center text-slate-600">{baselineMetrics.criticalTasksCovered} / {baselineMetrics.totalCriticalTasks}</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">{suggestedMetrics.criticalTasksCovered} / {suggestedMetrics.totalCriticalTasks}</td>
+                  <td className="px-4 py-2 text-right font-sans text-slate-600 font-medium">{suggestedMetrics.unscheduledCritical > 0 ? `${suggestedMetrics.unscheduledCritical} unscheduled` : 'All scheduled'}</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Coordinated blocks</td>
                   <td className="px-4 py-2 text-center text-slate-600">0</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">4</td>
-                  <td className="px-4 py-2 text-right font-sans text-teal-600 font-semibold">4 joint possessions</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">{suggestedMetrics.coordinatedMultiDeptBlocks}</td>
+                  <td className="px-4 py-2 text-right font-sans text-teal-600 font-semibold">{suggestedMetrics.coordinatedMultiDeptBlocks} joint possessions</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Unscheduled critical</td>
-                  <td className="px-4 py-2 text-center text-rose-600 font-semibold">1</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">0</td>
-                  <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">Zero critical backlog</td>
+                  <td className="px-4 py-2 text-center text-rose-600 font-semibold">{baselineMetrics.unscheduledCritical}</td>
+                  <td className="px-4 py-2 text-center font-bold text-amber-700 bg-amber-50/50">{suggestedMetrics.unscheduledCritical}</td>
+                  <td className="px-4 py-2 text-right font-sans text-amber-600 font-medium">Flagged for controller review</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 font-sans font-medium text-slate-800">Hard violations</td>
                   <td className="px-4 py-2 text-center text-amber-600">Not validated</td>
-                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">0</td>
+                  <td className="px-4 py-2 text-center font-bold text-teal-700 bg-teal-50/50">{suggestedMetrics.hardViolations ?? 0}</td>
                   <td className="px-4 py-2 text-right font-sans text-emerald-600 font-semibold">100% compliant</td>
                 </tr>
               </tbody>

@@ -100,25 +100,31 @@
 ### Step 6: Recommended Plan & Live Resiliency (`/plan`) — ⭐ THE SHOWSTOPPER
 * **URL:** You are now on `/plan`.
 
-#### Part A: Explain Consolidated Blocks
+#### Part A: Explain Consolidated Blocks & Planner Control
 * **What to do:**
   * Point to Corridor `C001 (Ahmedabad → Nadiad)` at `01:00–03:00`.
   * Click on `BLOCK-001` to open the **"Why this block?"** inspector sheet.
+  * Click the **"Lock"** button on `BLOCK-002` (Traction block) to demonstrate planner constraint locking.
 * **What to say (Bullet Points):**
   * **Cross-Department Synergy:** "Instead of 3 separate track shutdowns, RailSync bundled **ENG-001 (Track Repair)** and **SIG-001 (Point Machine Inspection)** into **one joint 2-hour shadow block**!"
+  * **Planner Lock Control:** "The controller has full authority: clicking 'Lock' guarantees this block will NOT be shifted or disrupted during subsequent re-optimizations."
+  * **Independent Safety Validation:** "Notice the 'Rule Validator: 0 Hard Violations' badge—an independent verification layer separate from the solver checks each assignment."
   * **Full Explainability:** "Notice the inspector drawer: it explicitly lists the safety rules satisfied, gang availability, and low traffic impact."
 
-#### Part B: The Live Disruption Test (Stress-Test Simulation)
+#### Part B: The Live Disruption Test (Stress-Test Simulation & Audit Trail)
 * **What to do:**
-  * Click the red **"Simulate COA Change"** button.
+  * Click the red **"Simulate schedule change"** button.
   * Point to the top banner turning red: `PLAN STALE — Operational availability changed`.
-  * Click the blue **"Re-optimize Plan"** button (takes 1.5 seconds).
-  * Point to the green banner: `RECOMMENDED — Re-optimized after COA change`.
-  * Click the green **"Approve Plan"** button.
+  * Click the blue **"Update plan"** button (re-optimizes in real-time).
+  * Point to the green banner: `RECOMMENDED — Updated after schedule change (v2)`.
+  * Point to `BLOCK-002`: "Notice the locked block was strictly preserved in its original window!"
+  * Scroll to the **Plan Audit Trail** card showing the version history and tamper-evident event log.
+  * Click the green **"Approve plan"** button.
 * **What to say (Bullet Points):**
   * **The Real-World Dilemma:** "In railway dispatching, a static plan is useless the moment a goods train runs 30 minutes late."
   * **Simulating Freight Congestion:** "When COA signals that slot `BW-001` is cancelled, RailSync instantly detects the conflict and flags the plan as **STALE**."
-  * **Self-Healing in 1.8s:** "Watch how fast it re-optimizes: within 1.8 seconds, all bundled blocks shift to backup slots without violating crew fatigue rules or delaying passenger express paths."
+  * **Self-Healing in Real Time:** "Watch how fast it re-optimizes: within milliseconds, all unpinned blocks shift to backup slots without violating crew fatigue rules or delaying passenger express paths."
+  * **Audit Log & Traceability:** "Every optimization run, lock action, planner adjustment, and approval is logged in the immutable audit trail."
   * **Human-in-the-Loop:** "RailSync recommends, but the railway Section Controller gives final digital sign-off."
 
 ---

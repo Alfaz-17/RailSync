@@ -1,4 +1,4 @@
-import { FragmentedBlock } from '@/types/domain';
+import { FragmentedBlock, MaintenanceTask, COAWindow } from '@/types/domain';
 
 // ── Fragmented / baseline plan (18 blocks, separate per department) ──
 // This represents the "before" state — departments plan independently
@@ -33,9 +33,83 @@ export const fragmentedBlocks: FragmentedBlock[] = [
   { id: 'FB-018', department: 'Traction', corridorId: 'C005', corridorName: 'Mumbai Central → Churchgate', taskId: 'TRD-005', taskTitle: 'Transformer Inspection', start: '03:30', end: '05:30', durationMin: 120 },
 ];
 
+/**
+ * Dynamically derives the uncoordinated baseline blocks for ANY arbitrary active tasks and windows.
+ * In the uncoordinated world, each department books an independent closure for its tasks.
+ */
+export function getDynamicBaselineBlocks(
+  activeTasks?: MaintenanceTask[],
+  activeWindows?: COAWindow[]
+): FragmentedBlock[] {
+  if (!activeTasks || activeTasks.length === 0) {
+    return fragmentedBlocks;
+  }
+
+  // If active tasks exactly match the default 35 tasks, preserve the hand-curated 18 baseline blocks
+  if (activeTasks.length === 35 && activeTasks[0]?.id === 'ENG-001') {
+    return fragmentedBlocks;
+  }
+
+  // Otherwise, construct isolated uncoordinated blocks for active tasks
+  const sampleTimes = [
+    { start: '01:00', end: '03:00' },
+    { start: '03:00', end: '04:30' },
+    { start: '04:30', end: '06:00' },
+    { start: '00:30', end: '02:00' },
+    { start: '02:00', end: '04:00' },
+  ];
+
+  const corridorCounts: Record<string, number> = {};
+
+  return activeTasks.map((task, idx) => {
+    const cId = task.corridorId || 'C001';
+    corridorCounts[cId] = (corridorCounts[cId] || 0) + 1;
+    const timeSlot = sampleTimes[(corridorCounts[cId] - 1) % sampleTimes.length];
+
+    // Compute end based on duration
+    const [sh, sm] = timeSlot.start.split(':').map(Number);
+    const endMinutes = sh * 60 + sm + task.durationMin;
+    const eh = Math.floor(endMinutes / 60) % 24;
+    const em = endMinutes % 60;
+    const calculatedEnd = `${String(eh).padStart(2, '0')}:${String(em).padStart(2, '0')}`;
+
+    return {
+      id: `FB-${String(idx + 1).padStart(3, '0')}`,
+      department: task.department,
+      corridorId: task.corridorId,
+      corridorName: task.corridorName,
+      taskId: task.id,
+      taskTitle: task.title,
+      start: timeSlot.start,
+      end: calculatedEnd,
+      durationMin: task.durationMin,
+      hasCoordinationOpportunity: corridorCounts[cId] > 1,
+    };
+  });
+}
+
+export function getDynamicBaselineMetrics(blocks: FragmentedBlock[], tasks: MaintenanceTask[]) {
+  const totalMinutes = blocks.reduce((sum, b) => sum + b.durationMin, 0);
+  const criticalTasks = tasks.filter((t) => t.priorityBand === 'Critical');
+  const criticalInBlocks = blocks.filter((b) => {
+    const t = tasks.find((tk) => tk.id === b.taskId);
+    return t?.priorityBand === 'Critical';
+  });
+
+  return {
+    totalBlocks: blocks.length,
+    totalBlockMinutes: totalMinutes,
+    criticalTasksCovered: criticalInBlocks.length,
+    totalCriticalTasks: criticalTasks.length,
+    coordinatedMultiDeptBlocks: 0,
+    unscheduledCritical: Math.max(0, criticalTasks.length - criticalInBlocks.length),
+    hardViolations: null as number | null,
+  };
+}
+
 export const baselineMetrics = {
   totalBlocks: 18,
-  totalBlockMinutes: 1620,
+  totalBlockMinutes: 1770,
   criticalTasksCovered: 5,
   totalCriticalTasks: 6,
   coordinatedMultiDeptBlocks: 0,

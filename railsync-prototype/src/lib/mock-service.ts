@@ -1,31 +1,73 @@
-import { normalPlan } from '@/data/optimized-plan';
-import { disruptedPlan } from '@/data/disrupted-plan';
+import { PlanResponse, PlanBlock, MaintenanceTask, COAWindow } from '@/types/domain';
+import { runConstraintScheduler } from './scheduler-engine';
 
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+export async function runMockOptimization(
+  tasks?: MaintenanceTask[],
+  windows?: COAWindow[]
+): Promise<PlanResponse> {
+  try {
+    const res = await fetch('/api/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario: 'NORMAL', tasks, windows }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // API route not reachable in client test -> use local engine
+  }
 
-export async function runMockOptimization() {
-  await sleep(2500);
-  return normalPlan;
+  return runConstraintScheduler({ scenario: 'NORMAL', tasks, windows });
 }
 
-export async function runMockReoptimization() {
-  await sleep(2000);
-  return disruptedPlan;
+export async function runMockReoptimization(
+  lockedBlockIds: string[] = [],
+  existingBlocks: PlanBlock[] = [],
+  tasks?: MaintenanceTask[],
+  windows?: COAWindow[]
+): Promise<PlanResponse> {
+  try {
+    const res = await fetch('/api/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        scenario: 'COA_DISRUPTION',
+        lockedBlockIds,
+        existingBlocks,
+        tasks,
+        windows,
+      }),
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch {
+    // API route not reachable -> use local engine
+  }
+
+  return runConstraintScheduler({
+    scenario: 'COA_DISRUPTION',
+    lockedBlockIds,
+    existingBlocks,
+    tasks,
+    windows,
+  });
 }
 
 export const optimizationSteps = [
-  'Analyzing maintenance tasks',
-  'Checking candidate block windows',
-  'Validating compatibility',
-  'Checking resource availability',
-  'Evaluating traffic impact',
-  'Generating recommendation',
+  'Analyzing maintenance tasks & priorities',
+  'Querying candidate COA block windows',
+  'Executing pairwise compatibility allowlist',
+  'Enforcing heavy machine & gang resource constraints',
+  'Running CP-SAT solver for corridor coordination',
+  'Validating plan against safety & operational rules',
 ];
 
 export const reoptimizationSteps = [
-  'Checking updated availability',
-  'Preserving planner locks',
-  'Validating constraints',
-  'Evaluating alternatives',
-  'Generating revised recommendation',
+  'Detecting updated COA operating conditions (BW-001 unavailable)',
+  'Preserving planner locks & fixed allocations',
+  'Solving revised block assignment via CP-SAT',
+  'Running independent rule validator',
+  'Generating explainable decision summary',
 ];

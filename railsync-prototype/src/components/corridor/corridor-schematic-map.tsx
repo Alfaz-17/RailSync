@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import {
   TrainFront,
   Clock,
@@ -15,6 +16,7 @@ import {
   AlertTriangle,
   Info,
   Layers,
+  ArrowRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -323,6 +325,11 @@ export function CorridorSchematicMap() {
                   <Badge className="bg-sky-100 text-sky-900 border border-sky-300 text-xs">
                     {selectedCorridor.activeBlock ? 'Bundled Block Scheduled' : 'Normal Running'}
                   </Badge>
+                  <Link href={`/tasks?corridor=${selectedCorridor.id}`}>
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1 border-sky-300 text-sky-800 hover:bg-sky-100">
+                      View {selectedCorridor.code} Tasks <ArrowRight className="w-3 h-3" />
+                    </Button>
+                  </Link>
                 </div>
               </div>
 
