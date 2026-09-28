@@ -1,0 +1,17 @@
+{
+  "setId": "set-2",
+  "fileName": "WR_BRC_SET_02_Monsoon_Emergency_Flood.json",
+  "title": "Set 2: Monsoon Emergency & Flood Alert",
+  "theme": "High Flood & Washout Emergency Restoration",
+  "division": "Vadodara Division (WR)",
+  "connectors": {
+    "tms_engineering_tasks": 5,
+    "smms_signal_tasks": 4,
+    "tdms_traction_tasks": 3,
+    "train_timetable_movements": 110,
+    "goods_forecast_windows": 75,
+    "coa_candidate_windows": 7,
+    "compatibility_rules": 14,
+    "crew_resource_entries": 18
+  }
+}

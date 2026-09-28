@@ -1,0 +1,17 @@
+{
+  "setId": "set-1",
+  "fileName": "WR_BRC_SET_01_Normal_Weekly_Operations.json",
+  "title": "Set 1: Normal Weekly Operations (Baseline)",
+  "theme": "Routine Golden Corridor Baseline",
+  "division": "Vadodara Division (WR)",
+  "connectors": {
+    "tms_engineering_tasks": 15,
+    "smms_signal_tasks": 10,
+    "tdms_traction_tasks": 10,
+    "train_timetable_movements": 140,
+    "goods_forecast_windows": 105,
+    "coa_candidate_windows": 21,
+    "compatibility_rules": 12,
+    "crew_resource_entries": 15
+  }
+}

@@ -1,0 +1,9 @@
+forecastId,corridorId,direction,forecastWindow,expectedRakes,cargoType,avgTrailingLoadTons,priorityClass
+GF-001,C001,UP,00:00-04:00,3,Container BLC,3200,High
+GF-002,C001,DN,01:00-05:00,4,POL Tank Wagons,3800,Critical
+GF-003,C002,UP,23:00-03:00,3,Coal BOXN Rake,4200,High
+GF-004,C002,DN,02:00-06:00,5,Automobile Rake NMG,2100,Medium
+GF-005,C003,UP,00:30-04:30,4,Fertilizer BCNHL,3600,High
+GF-006,C003,DN,01:30-05:30,3,Cement Rake BCN,3900,Medium
+GF-007,C004,UP,23:30-03:30,4,Container Double Stack,4500,Critical
+GF-008,C004,DN,02:30-06:30,3,Iron Ore BOXNHL,4400,High

@@ -1,0 +1,17 @@
+{
+  "setId": "set-5",
+  "fileName": "WR_BRC_SET_05_DFC_Heavy_Haul_Freight.json",
+  "title": "Set 5: DFC Heavy-Haul Freight Corridor",
+  "theme": "Western DFC Makarpura Interchange (25T Axle Load)",
+  "division": "Vadodara Division (WR)",
+  "connectors": {
+    "tms_engineering_tasks": 2,
+    "smms_signal_tasks": 2,
+    "tdms_traction_tasks": 2,
+    "train_timetable_movements": 125,
+    "goods_forecast_windows": 160,
+    "coa_candidate_windows": 2,
+    "compatibility_rules": 13,
+    "crew_resource_entries": 16
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "setId": "set-3",
+  "fileName": "WR_BRC_SET_03_Sunday_Mega_Block_Overhaul.json",
+  "title": "Set 3: Sunday Mega-Block Sprint",
+  "theme": "6-Hour Extended Track & OHE Overhaul",
+  "division": "Vadodara Division (WR)",
+  "connectors": {
+    "tms_engineering_tasks": 3,
+    "smms_signal_tasks": 2,
+    "tdms_traction_tasks": 2,
+    "train_timetable_movements": 85,
+    "goods_forecast_windows": 45,
+    "coa_candidate_windows": 4,
+    "compatibility_rules": 12,
+    "crew_resource_entries": 24
+  }
+}

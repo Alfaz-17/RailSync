@@ -42,7 +42,7 @@ export function getDynamicBaselineBlocks(
   activeWindows?: COAWindow[]
 ): FragmentedBlock[] {
   if (!activeTasks || activeTasks.length === 0) {
-    return fragmentedBlocks;
+    return [];
   }
 
   // If active tasks exactly match the default 35 tasks, preserve the hand-curated 18 baseline blocks

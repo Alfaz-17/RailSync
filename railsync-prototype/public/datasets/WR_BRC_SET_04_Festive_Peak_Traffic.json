@@ -1,0 +1,17 @@
+{
+  "setId": "set-4",
+  "fileName": "WR_BRC_SET_04_Festive_Peak_Traffic.json",
+  "title": "Set 4: Festive Peak Traffic (Diwali Rush)",
+  "theme": "185 Passenger Trains · Non-Disruptive Micro-Blocks",
+  "division": "Vadodara Division (WR)",
+  "connectors": {
+    "tms_engineering_tasks": 2,
+    "smms_signal_tasks": 2,
+    "tdms_traction_tasks": 2,
+    "train_timetable_movements": 185,
+    "goods_forecast_windows": 120,
+    "coa_candidate_windows": 4,
+    "compatibility_rules": 10,
+    "crew_resource_entries": 12
+  }
+}

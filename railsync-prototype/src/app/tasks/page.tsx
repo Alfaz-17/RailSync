@@ -15,7 +15,7 @@ import { MaintenanceTask, Department, PriorityBand } from '@/types/domain';
 import { formatDuration, getDueStatusLabel, getDueStatus } from '@/lib/format';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight } from 'lucide-react';
+import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight, ClipboardList, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -238,95 +238,119 @@ function TasksContent() {
         {/* Tasks Table */}
         <div className="rounded-xl border border-[var(--border)] bg-white overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-[var(--muted)] text-[var(--muted-foreground)] border-b border-[var(--border)]">
-                <tr>
-                  <th className="py-3 px-4 font-medium text-xs">ID</th>
-                  <th className="py-3 px-4 font-medium text-xs">Title</th>
-                  <th className="py-3 px-4 font-medium text-xs">Dept</th>
-                  <th className="py-3 px-4 font-medium text-xs">Corridor</th>
-                  <th className="py-3 px-4 font-medium text-xs text-right">Duration</th>
-                  <th className="py-3 px-4 font-medium text-xs text-center">Priority</th>
-                  <th className="py-3 px-4 font-medium text-xs text-center">Due Status</th>
-                  <th className="py-3 px-4 font-medium text-xs">Resource</th>
-                  <th className="py-3 px-4 font-medium text-xs text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {filtered.map((task) => {
-                  const dueStatus = getDueStatus(task.dueDate);
-                  const isUserAdded = task.id.includes('USR');
-                  return (
-                    <tr
-                      key={task.id}
-                      className="hover:bg-slate-50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedTask(task)}
-                    >
-                      <td className="py-3 px-4 font-mono font-semibold text-xs text-[var(--foreground)]">
-                        {task.id}
-                        {isUserAdded && (
-                          <span className="ml-1 px-1 py-0.5 text-[9px] bg-teal-100 text-teal-800 rounded font-bold">NEW</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 font-medium text-[var(--foreground)]">{task.title}</td>
-                      <td className="py-3 px-4">
-                        <Badge
-                          variant="outline"
-                          className="text-[11px] font-semibold"
-                          style={{ color: deptColors[task.department], borderColor: `${deptColors[task.department]}40` }}
-                        >
-                          {task.department}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">
-                        <span className="font-mono">{task.corridorId}</span> · {task.corridorName}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-[var(--foreground)]">
-                        {formatDuration(task.durationMin)}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className="inline-block px-2 py-0.5 rounded text-xs font-bold font-mono"
-                          style={{ backgroundColor: `${priorityColors[task.priorityBand]}15`, color: priorityColors[task.priorityBand] }}
-                        >
-                          P{task.priorityScore}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <Badge
-                          className={`text-[11px] ${
-                            dueStatus === 'overdue'
-                              ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : dueStatus === 'today'
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-slate-50 text-slate-600 border-slate-200'
-                          }`}
-                        >
-                          {getDueStatusLabel(task.dueDate)}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">{task.requiredResource}</td>
-                      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                        {isUserAdded && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50"
-                            onClick={() => {
-                              deleteTask(task.id);
-                              toast.info(`Task ${task.id} removed`);
-                            }}
-                            title="Remove task"
+            {tasks.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <ClipboardList className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-bold text-slate-800">Unified Workbank is Clean (0 Tasks)</h3>
+                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                  No maintenance demands have been fed into RailSync yet. You can upload custom CSV / JSON files or choose from the 5 pre-configured scenario sets on the Data Sources page.
+                </p>
+                <div className="pt-2 flex items-center justify-center gap-2">
+                  <Link href="/data-sources">
+                    <Button size="sm" className="bg-[#235b80] hover:bg-[#1d4e70] text-white text-xs gap-1.5 h-8">
+                      <Upload className="w-3.5 h-3.5" /> Go to Data Sources to Feed Data
+                    </Button>
+                  </Link>
+                  <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => setIsAddOpen(true)}>
+                    + Create Task Manually
+                  </Button>
+                </div>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-500">
+                No tasks match your filter criteria.
+              </div>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[var(--muted)] text-[var(--muted-foreground)] border-b border-[var(--border)]">
+                  <tr>
+                    <th className="py-3 px-4 font-medium text-xs">ID</th>
+                    <th className="py-3 px-4 font-medium text-xs">Title</th>
+                    <th className="py-3 px-4 font-medium text-xs">Dept</th>
+                    <th className="py-3 px-4 font-medium text-xs">Corridor</th>
+                    <th className="py-3 px-4 font-medium text-xs text-right">Duration</th>
+                    <th className="py-3 px-4 font-medium text-xs text-center">Priority</th>
+                    <th className="py-3 px-4 font-medium text-xs text-center">Due Status</th>
+                    <th className="py-3 px-4 font-medium text-xs">Resource</th>
+                    <th className="py-3 px-4 font-medium text-xs text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {filtered.map((task) => {
+                    const dueStatus = getDueStatus(task.dueDate);
+                    const isUserAdded = task.id.includes('USR');
+                    return (
+                      <tr
+                        key={task.id}
+                        className="hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <td className="py-3 px-4 font-mono font-semibold text-xs text-[var(--foreground)]">
+                          {task.id}
+                          {isUserAdded && (
+                            <span className="ml-1 px-1 py-0.5 text-[9px] bg-teal-100 text-teal-800 rounded font-bold">NEW</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-[var(--foreground)]">{task.title}</td>
+                        <td className="py-3 px-4">
+                          <Badge
+                            variant="outline"
+                            className="text-[11px] font-semibold"
+                            style={{ color: deptColors[task.department], borderColor: `${deptColors[task.department]}40` }}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            {task.department}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">
+                          <span className="font-mono">{task.corridorId}</span> · {task.corridorName}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono text-xs text-[var(--foreground)]">
+                          {formatDuration(task.durationMin)}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className="inline-block px-2 py-0.5 rounded text-xs font-bold font-mono"
+                            style={{ backgroundColor: `${priorityColors[task.priorityBand]}15`, color: priorityColors[task.priorityBand] }}
+                          >
+                            P{task.priorityScore}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <Badge
+                            className={`text-[11px] ${
+                              dueStatus === 'overdue'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : dueStatus === 'today'
+                                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                : 'bg-slate-50 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {getDueStatusLabel(task.dueDate)}
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4 text-xs text-[var(--muted-foreground)]">{task.requiredResource}</td>
+                        <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          {isUserAdded && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-rose-600 hover:bg-rose-50"
+                              onClick={() => {
+                                deleteTask(task.id);
+                                toast.info(`Task ${task.id} removed`);
+                              }}
+                              title="Remove task"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

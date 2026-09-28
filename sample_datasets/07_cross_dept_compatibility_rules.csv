@@ -1,0 +1,7 @@
+ruleId,primaryDepartment,coDepartment,primaryActivity,coActivity,isCompatible,requiresSafetyBuffer,safetyBufferMin,rationale
+R01,Engineering,Signal,Track Renewal,Point Machine Calibration,true,true,15,Both require track possession; joint possession permitted if signal work commences after heavy machine clears.
+R02,Engineering,Traction,Ballast Tamping (08-32),OHE Mast Inspection,true,false,0,Tamping tines do not interfere with OHE contact wire or portal structures.
+R03,Engineering,Traction,BCM Deep Screening,OHE Power Cut & Wire Adjustment,true,true,20,BCM requires power block isolation due to high boom swinging near 25kV line.
+R04,Signal,Traction,Track Circuit Bonding Replacement,Return Current Bond Inspection,true,false,0,Mutual electrical bonding checks are synergistic during combined traffic/power block.
+R05,Engineering,Signal,Weld Testing (USFD),Relay Logic Diagnostics,true,false,0,USFD car movement compatible with off-track relay room maintenance.
+R06,Engineering,Engineering,Track Relaying Train (TRT),Rail Fracture Clamping,false,true,30,Multiple heavy on-track engineering machines cannot occupy same block section simultaneously.

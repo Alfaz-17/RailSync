@@ -1,0 +1,11 @@
+trainNo,trainName,corridorId,origin,destination,scheduledDeparture,scheduledArrival,frequency,trainType,priorityRank
+12009,Shatabdi Express,C001,Mumbai Central,Ahmedabad Jn,06:20,12:45,Daily,Premium Shatabdi,1
+12010,Shatabdi Express,C001,Ahmedabad Jn,Mumbai Central,15:10,21:45,Daily,Premium Shatabdi,1
+12951,Tejas Rajdhani Exp,C003,Mumbai Central,New Delhi,17:00,08:32,Daily,Premium Rajdhani,1
+12952,Tejas Rajdhani Exp,C003,New Delhi,Mumbai Central,16:55,08:35,Daily,Premium Rajdhani,1
+20901,Vande Bharat Exp,C001,Mumbai Central,Gandhinagar Capital,06:00,12:25,Except Sun,Vande Bharat,1
+19011,Gujarat Express,C002,Mumbai Central,Ahmedabad Jn,05:45,14:30,Daily,Mail Express,2
+12933,Karnavati Express,C001,Mumbai Central,Ahmedabad Jn,14:05,21:05,Daily,Superfast,2
+19217,Saurashtra Janta,C002,Bandra Terminus,Veraval,13:40,07:10,Daily,Mail Express,2
+22953,Gujarat SF Exp,C003,Mumbai Central,Ahmedabad Jn,05:40,14:40,Daily,Superfast,2
+19015,Saurashtra Exp,C001,Dadar,Porbandar,09:20,05:30,Daily,Mail Express,3

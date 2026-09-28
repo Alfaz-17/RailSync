@@ -16,6 +16,7 @@ import { validatePlanBlocks } from '@/lib/plan-validator';
 import { tasks as defaultTasks } from '@/data/tasks';
 import { coaWindows as defaultWindows } from '@/data/windows';
 import { goldenTasks, goldenWindows } from '@/data/golden-scenario';
+import { COMPREHENSIVE_SCENARIO_SETS } from '@/data/comprehensive-scenarios';
 
 interface PrototypeState {
   tasks: MaintenanceTask[];
@@ -23,6 +24,7 @@ interface PrototypeState {
   planStatus: PlanStatus;
   scenario: 'NORMAL' | 'COA_DISRUPTION';
   scenarioMode: 'GOLDEN' | 'FULL_DIVISION';
+  activeScenarioSetId: string;
   plan: MockPlanResponse | null;
   coaChanged: boolean;
   approvedAt: string | null;
@@ -35,9 +37,12 @@ interface PrototypeState {
   addTask: (task: MaintenanceTask) => void;
   deleteTask: (taskId: string) => void;
   importDataset: (newTasks: MaintenanceTask[], newWindows?: COAWindow[]) => void;
+  mergeDepartmentTasks: (department: 'Engineering' | 'Signal' | 'Traction', newTasks: MaintenanceTask[]) => void;
+  setWindows: (newWindows: COAWindow[]) => void;
   clearWorkbank: () => void;
   loadGoldenScenario: () => void;
   loadFullDivisionScenario: () => void;
+  loadComprehensiveScenarioSet: (setId: string) => void;
   runOptimization: () => Promise<void>;
   simulateCoaChange: () => void;
   reoptimize: () => Promise<void>;
@@ -52,11 +57,12 @@ interface PrototypeState {
 export const usePrototypeStore = create<PrototypeState>()(
   persist(
     (set, get) => ({
-      tasks: goldenTasks,
-      windows: goldenWindows,
+      tasks: [],
+      windows: [],
       planStatus: 'BASELINE',
       scenario: 'NORMAL',
       scenarioMode: 'GOLDEN',
+      activeScenarioSetId: '',
       plan: null,
       coaChanged: false,
       approvedAt: null,
@@ -106,6 +112,45 @@ export const usePrototypeStore = create<PrototypeState>()(
             plan: null,
             planStatus: 'BASELINE',
             auditEvents: [importEvent, ...state.auditEvents],
+          };
+        });
+      },
+
+      mergeDepartmentTasks: (department: 'Engineering' | 'Signal' | 'Traction', newTasks: MaintenanceTask[]) => {
+        set((state) => {
+          // Keep other departments' tasks, replace this department's tasks with uploaded ones
+          const otherTasks = state.tasks.filter((t) => t.department !== department);
+          const combined = [...otherTasks, ...newTasks];
+          const auditEvent: PlanAuditEvent = {
+            id: `EVT-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            action: 'OPTIMIZED',
+            actor: `${department} CRIS Adapter`,
+            details: `${department} dataset ingested: ${newTasks.length} tasks synced. Total workbank: ${combined.length} tasks.`,
+          };
+          return {
+            tasks: combined,
+            plan: null,
+            planStatus: 'BASELINE',
+            auditEvents: [auditEvent, ...state.auditEvents],
+          };
+        });
+      },
+
+      setWindows: (newWindows: COAWindow[]) => {
+        set((state) => {
+          const auditEvent: PlanAuditEvent = {
+            id: `EVT-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+            action: 'OPTIMIZED',
+            actor: 'COA CRIS Adapter',
+            details: `COA block windows ingested: ${newWindows.length} candidate windows synced.`,
+          };
+          return {
+            windows: newWindows,
+            plan: null,
+            planStatus: 'BASELINE',
+            auditEvents: [auditEvent, ...state.auditEvents],
           };
         });
       },
@@ -180,6 +225,33 @@ export const usePrototypeStore = create<PrototypeState>()(
               action: 'OPTIMIZED',
               actor: 'Scenario Controller',
               details: 'Full Division Scenario loaded: 35 tasks across 5 corridors (Western Railway).',
+            },
+          ],
+        });
+      },
+
+      loadComprehensiveScenarioSet: (setId: string) => {
+        const found = COMPREHENSIVE_SCENARIO_SETS.find((s) => s.id === setId) || COMPREHENSIVE_SCENARIO_SETS[0];
+        set({
+          activeScenarioSetId: found.id,
+          tasks: found.tasks,
+          windows: found.windows,
+          planStatus: 'BASELINE',
+          scenario: 'NORMAL',
+          plan: null,
+          coaChanged: false,
+          approvedAt: null,
+          rejectedAt: null,
+          rejectReason: null,
+          planVersion: 1,
+          validationErrors: [],
+          auditEvents: [
+            {
+              id: `EVT-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              action: 'OPTIMIZED',
+              actor: 'Enterprise Data Adapter',
+              details: `Scenario Set Synced: ${found.title} (${found.code}) — All 8 connectors updated with ${found.tasks.length} tasks and ${found.windows.length} candidate windows.`,
             },
           ],
         });
@@ -387,9 +459,10 @@ export const usePrototypeStore = create<PrototypeState>()(
 
       resetDemo: () => {
         set({
-          tasks: goldenTasks,
-          windows: goldenWindows,
+          tasks: [],
+          windows: [],
           scenarioMode: 'GOLDEN',
+          activeScenarioSetId: '',
           planStatus: 'BASELINE',
           scenario: 'NORMAL',
           plan: null,
@@ -404,7 +477,7 @@ export const usePrototypeStore = create<PrototypeState>()(
       },
     }),
     {
-      name: 'railsync-prototype-state',
+      name: 'railsync-clean-v4',
     }
   )
 );

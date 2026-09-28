@@ -78,6 +78,22 @@ export function KpiImpactVisual() {
     },
   ];
 
+  if (tasks.length === 0) {
+    return (
+      <div className="rounded-xl border-dashed border-2 border-slate-200 bg-slate-50/50 p-6 text-center space-y-3">
+        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+          <TrendingUp className="w-5 h-5" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold text-slate-900">Empirical Performance Metrics (Clean Slate: 0 Tasks)</h4>
+          <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            No maintenance tasks loaded into RailSync. Ingest tasks from CRIS data sources to evaluate the Siloed Planning vs RailSync metrics.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border-2 border-slate-200 bg-white p-6 md:p-8 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">

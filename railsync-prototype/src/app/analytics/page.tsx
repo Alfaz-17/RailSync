@@ -9,8 +9,9 @@ import { getDynamicBaselineBlocks } from '@/data/current-plan';
 import { normalPlan } from '@/data/optimized-plan';
 import { summarizeBlocks } from '@/lib/plan-summary';
 import { formatDuration } from '@/lib/format';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, Info, BarChart3, Upload } from 'lucide-react';
 import { KpiImpactVisual } from '@/components/visualizations/kpi-impact-visual';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function AnalyticsPage() {
   const { tasks, windows, plan } = usePrototypeStore();
@@ -32,6 +33,40 @@ export default function AnalyticsPage() {
       taskCount: baselineBlocks.length,
     };
   }, [baselineBlocks, tasks]);
+
+  if (tasks.length === 0) {
+    return (
+      <div>
+        <Topbar title="Results & Impact Analysis" description="Compare the work included in each sample plan." />
+        <div className="page-content space-y-6">
+          <section className="page-intro">
+            <div>
+              <div className="eyebrow">Results &amp; Operational Impact</div>
+              <h2>Empirical Performance Analytics</h2>
+              <p>Compare uncoordinated departmental planning against RailSync multi-discipline bundling.</p>
+            </div>
+          </section>
+
+          <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50">
+            <CardContent className="p-12 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+                <BarChart3 className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-900">Analytics Clean Slate (0 Tasks)</h3>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                No maintenance tasks or timetable windows are currently in memory. First upload files from Data Sources or load an operational scenario to view detailed baseline vs suggested plan analytics.
+              </p>
+              <Link href="/data-sources">
+                <Button className="bg-[#235b80] hover:bg-[#1d4e70] text-white text-xs gap-1.5 h-9">
+                  <Upload className="w-3.5 h-3.5" /> Ingest Data from Data Sources
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const hasPlan = Boolean(plan && plan.blocks && plan.blocks.length > 0);
   const shownPlan = plan;

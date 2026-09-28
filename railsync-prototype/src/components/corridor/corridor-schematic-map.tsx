@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { usePrototypeStore } from '@/store/prototype-store';
 import Link from 'next/link';
 import {
   TrainFront,
@@ -62,7 +63,7 @@ const stations: StationNode[] = [
   { id: 'MMCT', code: 'MMCT', name: 'Mumbai Central', x: 96 },
 ];
 
-const corridors: CorridorSegment[] = [
+const rawCorridors: CorridorSegment[] = [
   {
     id: 'C001',
     code: 'C001',
@@ -71,16 +72,9 @@ const corridors: CorridorSegment[] = [
     endStation: 'ND',
     startX: 8,
     endX: 24,
-    activeBlock: {
-      id: 'BLOCK-001',
-      window: '01:00 – 03:00',
-      departments: ['Engineering', 'Signal'],
-      tasksCount: 2,
-      impact: 'Low',
-      cautionSpeed: '30 km/h (Track tamping)',
-    },
+    activeBlock: null,
     trains: [
-      { id: '12952', name: 'Mumbai Rajdhani', time: '02:15', status: 'INSIDE_BLOCK' },
+      { id: '12952', name: 'Mumbai Rajdhani', time: '02:15', status: 'CLEAR' },
       { id: '19038', name: 'Avadh Express', time: '03:45', status: 'CLEAR' },
     ],
   },
@@ -92,16 +86,9 @@ const corridors: CorridorSegment[] = [
     endStation: 'BRC',
     startX: 24,
     endX: 54,
-    activeBlock: {
-      id: 'BLOCK-003',
-      window: '00:30 – 02:30',
-      departments: ['Engineering', 'Signal'],
-      tasksCount: 2,
-      impact: 'Low',
-      cautionSpeed: '45 km/h (Point machine replacement)',
-    },
+    activeBlock: null,
     trains: [
-      { id: '22954', name: 'Gujarat SF Express', time: '01:10', status: 'DELAYED' },
+      { id: '22954', name: 'Gujarat SF Express', time: '01:10', status: 'CLEAR' },
       { id: '12010', name: 'Shatabdi Express', time: '04:15', status: 'CLEAR' },
     ],
   },
@@ -113,14 +100,7 @@ const corridors: CorridorSegment[] = [
     endStation: 'ST',
     startX: 54,
     endX: 84,
-    activeBlock: {
-      id: 'BLOCK-005',
-      window: '00:00 – 02:00',
-      departments: ['Signal', 'Traction'],
-      tasksCount: 2,
-      impact: 'Low',
-      cautionSpeed: '20 km/h (OHE insulator wash)',
-    },
+    activeBlock: null,
     trains: [
       { id: '12904', name: 'Golden Temple Mail', time: '01:40', status: 'CLEAR' },
       { id: '22944', name: 'Indore Daund SF', time: '02:20', status: 'CLEAR' },
@@ -134,14 +114,7 @@ const corridors: CorridorSegment[] = [
     endStation: 'MMCT',
     startX: 84,
     endX: 96,
-    activeBlock: {
-      id: 'BLOCK-007',
-      window: '00:00 – 02:00',
-      departments: ['Engineering', 'Signal'],
-      tasksCount: 2,
-      impact: 'Low',
-      cautionSpeed: 'Normal 110 km/h (Post-clearance)',
-    },
+    activeBlock: null,
     trains: [
       { id: '12954', name: 'August Kranti Tejas', time: '03:10', status: 'CLEAR' },
     ],
@@ -149,7 +122,33 @@ const corridors: CorridorSegment[] = [
 ];
 
 export function CorridorSchematicMap() {
-  const [selectedCorridor, setSelectedCorridor] = useState<CorridorSegment>(corridors[1]);
+  const { tasks, plan } = usePrototypeStore();
+
+  const corridors: CorridorSegment[] = useMemo(() => {
+    return rawCorridors.map((c) => {
+      if (!plan || !plan.blocks || plan.blocks.length === 0) {
+        return { ...c, activeBlock: null };
+      }
+      const matchingBlock = plan.blocks.find((b) => b.corridorId === c.id);
+      if (!matchingBlock) {
+        return { ...c, activeBlock: null };
+      }
+      return {
+        ...c,
+        activeBlock: {
+          id: matchingBlock.id,
+          window: `${matchingBlock.start} – ${matchingBlock.end}`,
+          departments: matchingBlock.departments,
+          tasksCount: matchingBlock.taskIds.length,
+          impact: matchingBlock.trafficImpact,
+          cautionSpeed: '30 km/h (Active Block Maintenance)',
+        },
+      };
+    });
+  }, [plan]);
+
+  const [selectedId, setSelectedId] = useState<string>('C002');
+  const selectedCorridor = corridors.find((c) => c.id === selectedId) || corridors[1];
   const [filterLayer, setFilterLayer] = useState<'all' | 'blocks' | 'trains'>('all');
 
   return (
@@ -218,7 +217,7 @@ export function CorridorSchematicMap() {
               return (
                 <div
                   key={c.id}
-                  onClick={() => setSelectedCorridor(c)}
+                  onClick={() => setSelectedId(c.id)}
                   className={`absolute top-[38px] h-[26px] rounded-md cursor-pointer transition-all ${
                     hasBlock
                       ? isSelected

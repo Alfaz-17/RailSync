@@ -8,11 +8,10 @@ import { usePrototypeStore } from '@/store/prototype-store';
 import { getDynamicBaselineBlocks } from '@/data/current-plan';
 import { summarizeBlocks } from '@/lib/plan-summary';
 import { TimelineView, fragmentedToTimeline } from '@/components/timeline-view';
-import { ArrowRight, AlertCircle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight, AlertCircle, Wrench, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-
-import { ShadowBlockDiagram } from '@/components/visualizations/shadow-block-diagram';
 
 export default function CurrentPlanPage() {
   const { tasks, windows } = usePrototypeStore();
@@ -51,68 +50,86 @@ export default function CurrentPlanPage() {
           </Button>
         </section>
 
-        {/* Visual Shadow Block Explainer */}
-        <ShadowBlockDiagram />
-
-        {/* Baseline Metrics */}
-        <div className="stat-grid">
-          {[
-            { label: 'Total Blocks', value: summary.blockCount, note: 'Separate track closures' },
-            { label: 'Minutes in Blocks', value: `${summary.totalMinutes.toLocaleString()}`, note: 'Total possession time' },
-            { label: 'Critical Planned', value: `${summary.criticalPlanned}/${summary.criticalTotal}`, note: 'Critical tasks with a slot' },
-            { label: 'Shared Blocks', value: summary.sharedBlocks, note: 'Multi-department (none yet)' },
-          ].map((m) => (
-            <motion.div key={m.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="stat-tile text-center">
-                <div className="stat-label justify-center">{m.label}</div>
-                <p className="stat-value">{m.value}</p>
-                <p className="stat-note">{m.note}</p>
+        {tasks.length === 0 ? (
+          <Card className="border-dashed border-2 border-slate-200">
+            <CardContent className="p-12 text-center space-y-4">
+              <Wrench className="w-12 h-12 text-slate-300 mx-auto" />
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">No Current Departmental Demands (0 Tasks)</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                  The workbank has not been fed yet. Go to Data Sources to upload files or select an operational scenario to view baseline departmental conflicts.
+                </p>
               </div>
-            </motion.div>
-          ))}
-        </div>
+              <Link href="/data-sources">
+                <Button className="bg-[#235b80] hover:bg-[#1d4e70] text-white text-xs gap-1.5 h-9">
+                  <Upload className="w-3.5 h-3.5" /> Go to Data Sources to Feed Data
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Baseline Metrics */}
+            <div className="stat-grid">
+              {[
+                { label: 'Total Blocks', value: summary.blockCount, note: 'Separate track closures' },
+                { label: 'Minutes in Blocks', value: `${summary.totalMinutes.toLocaleString()}`, note: 'Total possession time' },
+                { label: 'Critical Planned', value: `${summary.criticalPlanned}/${summary.criticalTotal}`, note: 'Critical tasks with a slot' },
+                { label: 'Shared Blocks', value: summary.sharedBlocks, note: 'Multi-department (none yet)' },
+              ].map((m) => (
+                <motion.div key={m.label} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="stat-tile text-center">
+                    <div className="stat-label justify-center">{m.label}</div>
+                    <p className="stat-value">{m.value}</p>
+                    <p className="stat-note">{m.note}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-        <Badge className="text-xs font-semibold bg-[#F28C1810] text-[#C28012] border border-[#F28C1830] py-1 px-3">
-          Uncoordinated Baseline · {currentBlocks.length} Separate Department Requests
-        </Badge>
+            <Badge className="text-xs font-semibold bg-[#F28C1810] text-[#C28012] border border-[#F28C1830] py-1 px-3">
+              Uncoordinated Baseline · {currentBlocks.length} Separate Department Requests
+            </Badge>
 
-        {/* Timeline per corridor — using the new TimelineView component */}
-        {corridors.map((corridorId) => {
-          const corridorBlocks = currentBlocks.filter((b) => b.corridorId === corridorId);
-          const corridorName = corridorBlocks[0]?.corridorName || corridorId;
-          const timelineBlocks = fragmentedToTimeline(corridorBlocks);
-          const hasCoordOpp = corridorBlocks.some(b => b.hasCoordinationOpportunity);
+            {/* Timeline per corridor — using the new TimelineView component */}
+            {corridors.map((corridorId) => {
+              const corridorBlocks = currentBlocks.filter((b) => b.corridorId === corridorId);
+              const corridorName = corridorBlocks[0]?.corridorName || corridorId;
+              const timelineBlocks = fragmentedToTimeline(corridorBlocks);
+              const hasCoordOpp = corridorBlocks.some(b => b.hasCoordinationOpportunity);
 
-          return (
-            <motion.div
-              key={corridorId}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <TimelineView
-                corridorId={corridorId}
-                corridorName={corridorName}
-                blocks={timelineBlocks}
-              />
-              {hasCoordOpp && (
-                <div className="mt-2 flex items-center gap-2 text-[#F28C18] bg-[#F28C1808] border border-[#F28C1830] rounded-lg p-3">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-semibold">These tasks use the same corridor. Check whether they can share a block.</span>
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
+              return (
+                <motion.div
+                  key={corridorId}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <TimelineView
+                    corridorId={corridorId}
+                    corridorName={corridorName}
+                    blocks={timelineBlocks}
+                  />
+                  {hasCoordOpp && (
+                    <div className="mt-2 flex items-center gap-2 text-[#F28C18] bg-[#F28C1808] border border-[#F28C1830] rounded-lg p-3">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span className="text-xs font-semibold">These tasks use the same corridor. Check whether they can share a block.</span>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
 
-        {/* CTA */}
-        <div className="flex justify-center pt-2">
-          <Link href="/optimize">
-            <Button size="lg" className="bg-[var(--primary)] hover:bg-[#091F40] text-white gap-2 px-8 py-6 text-base font-semibold">
-              Build a shared plan
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
-        </div>
+            {/* CTA */}
+            <div className="flex justify-center pt-2">
+              <Link href="/optimize">
+                <Button size="lg" className="bg-[var(--primary)] hover:bg-[#091F40] text-white gap-2 px-8 py-6 text-base font-semibold">
+                  Build a shared plan
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

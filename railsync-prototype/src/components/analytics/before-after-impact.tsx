@@ -16,7 +16,10 @@ import {
   AlertTriangle,
   ArrowRight,
   Zap,
+  Sparkles,
+  Info,
 } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MetricComparison {
@@ -101,6 +104,86 @@ export function BeforeAfterImpact() {
       isPositive: true,
     },
   ], [baselineMetrics, suggestedMetrics, blockReductionPct, minReductionPct]);
+
+  if (tasks.length === 0) {
+    return (
+      <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50">
+        <CardContent className="p-8 text-center space-y-3">
+          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
+            <Wrench className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">Operational Impact Analysis (Clean Slate: 0 Tasks)</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+              Workbank currently has 0 tasks. Upload files from CRIS data sources or load an operational scenario to view the uncoordinated baseline vs RailSync AI bundling comparison.
+            </p>
+          </div>
+          <Link href="/data-sources">
+            <Button size="sm" className="bg-[#235b80] hover:bg-[#1d4e70] text-white text-xs gap-1.5 h-8">
+              <Sparkles className="w-3.5 h-3.5" /> Ingest Data from Data Sources
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasPlan) {
+    return (
+      <Card className="border-slate-200/90 shadow-sm bg-white overflow-hidden">
+        <CardHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-200">
+                  Operational Baseline
+                </span>
+                <Badge variant="outline" className="text-xs text-slate-600 border-slate-300 bg-white">
+                  Uncoordinated Silos (Pre-Optimization)
+                </Badge>
+              </div>
+              <CardTitle className="text-lg font-bold text-slate-900">
+                Departmental Silos Baseline: {baselineMetrics.totalBlocks} Isolated Track Closures
+              </CardTitle>
+              <CardDescription className="text-xs text-slate-500 mt-0.5">
+                Without RailSync, Engineering, S&amp;T, and Traction request separate track possessions totalling {baselineMetrics.totalBlockMinutes} minutes across corridors.
+              </CardDescription>
+            </div>
+            <Link href="/optimize">
+              <Button size="sm" className="bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2 text-xs">
+                <Sparkles className="w-3.5 h-3.5" /> Build Plan to Bundle Blocks
+              </Button>
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div className="rounded-xl border border-rose-200/80 p-4 bg-rose-50/30">
+              <div className="text-xs font-semibold text-rose-800 uppercase tracking-wider mb-1">Siloed Closures</div>
+              <div className="text-2xl font-extrabold font-mono text-rose-950">{baselineMetrics.totalBlocks} separate blocks</div>
+              <p className="text-[11px] text-rose-700 mt-1">Each department shuts down the corridor separately.</p>
+            </div>
+            <div className="rounded-xl border border-rose-200/80 p-4 bg-rose-50/30">
+              <div className="text-xs font-semibold text-rose-800 uppercase tracking-wider mb-1">Total Line Possession</div>
+              <div className="text-2xl font-extrabold font-mono text-rose-950">{baselineMetrics.totalBlockMinutes} min</div>
+              <p className="text-[11px] text-rose-700 mt-1">Heavy impact on freight and passenger punctuality.</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4 bg-slate-50">
+              <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Multi-Dept Coordination</div>
+              <div className="text-2xl font-extrabold font-mono text-slate-800">0 shared blocks</div>
+              <p className="text-[11px] text-slate-500 mt-1">No cross-discipline shadow bundling active yet.</p>
+            </div>
+          </div>
+          <div className="text-xs text-slate-500 flex items-center gap-2 bg-slate-50 p-3 rounded-lg border border-slate-200/60">
+            <Info className="w-4 h-4 text-sky-600 shrink-0" />
+            <span>
+              To view the comparative <strong>Operational Impact Analysis (-80% track closures, multi-department co-utilization)</strong>, build an optimized plan using Google OR-Tools.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-slate-200/90 shadow-sm bg-white overflow-hidden">

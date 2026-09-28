@@ -1,0 +1,11 @@
+resourceId,resourceName,department,resourceType,homeBase,availableHoursDaily,status,allocatedEquipment
+RES-01,Track Gang A,Engineering,Manual P-Way Gang,Ahmedabad (ADI),8,Available,Hydraulic track jacks & rail drills
+RES-02,Tamping Machine 08-32,Engineering,Track Maintenance Machine,Vadodara (BRC),6,Available,Plasser 08-32 Tamping Unit
+RES-03,BCM Machine 800,Engineering,Track Maintenance Machine,Nadiad (ND),6,Available,Ballast Cleaning Machine
+RES-04,USFD Vehicle 02,Engineering,Ultrasonic Flaw Detector,Vadodara (BRC),7,Available,Digital USFD Rail Scanner
+RES-05,Signal Maintainer A,Signal,Skilled Technician Gang,Ahmedabad (ADI),8,Available,Multimeters & insulation testers
+RES-06,Signal Crew 1,Signal,Specialized Interlocking Gang,Anand (ANND),8,Available,MSDAC diagnostic kit & EI test console
+RES-07,Tower Wagon TW-01,Traction,Self-Propelled 4-Wheeler,Vadodara (BRC),6,Available,Elevating platform & catenary rollers
+RES-08,OHE Gang A,Traction,Overhead Traction Linemen,Nadiad (ND),8,Available,Discharge rods & grounding harness
+RES-09,OHE Gang B,Traction,Overhead Traction Linemen,Surat (ST),8,Available,Tensioning tools & contact wire clamps
+RES-10,Emergency Breakdown Gang,Multi-Department,Accident Relief & Heavy Gang,Vadodara (BRC),12,Standby,Heavy re-railing hydraulic equipment

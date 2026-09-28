@@ -9,7 +9,7 @@ import { usePrototypeStore } from '@/store/prototype-store';
 import { getDueStatus } from '@/lib/format';
 import {
   ClipboardList, CalendarDays, ShieldCheck, Users,
-  Wrench, Radio, Zap, ArrowRight, Info,
+  Wrench, Radio, Zap, ArrowRight, Info, Sparkles, Upload,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell,
@@ -76,6 +76,28 @@ export default function DashboardPage() {
             Start Optimization <ArrowRight size={16} />
           </Button>
         </section>
+
+        {/* Clean Slate Initializer Banner when 0 tasks */}
+        {tasks.length === 0 && (
+          <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-sky-100 flex items-center justify-center text-sky-700 shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Workbank Clean Slate (0 Tasks)</h4>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  RailSync is initialized with no pre-fed data. Go to Data Sources to upload your files or choose one of the 5 operational scenarios.
+                </p>
+              </div>
+            </div>
+            <Link href="/data-sources">
+              <Button size="sm" className="bg-[#235b80] hover:bg-[#1d4e70] text-white text-xs gap-1.5 h-8">
+                <Upload className="w-3.5 h-3.5" /> Ingest Data from Data Sources
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* KPI Cards — one card = one message */}
         <div className="stat-grid">

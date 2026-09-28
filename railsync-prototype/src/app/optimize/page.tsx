@@ -147,10 +147,23 @@ export default function OptimizePage() {
                     </Button>
                   </div>
                 </div>
+              ) : tasks.length === 0 ? (
+                <div>
+                  <ClipboardList className="text-slate-400 w-7 h-7 mb-3" />
+                  <h2 className="text-lg font-semibold text-slate-900">Workbank is Empty (0 Tasks)</h2>
+                  <p className="text-sm text-slate-600 mt-2 mb-5 leading-relaxed">
+                    No maintenance requirements have been ingested into RailSync yet. First feed data by uploading CSV/JSON files or selecting one of the 5 operational scenarios on the Data Sources page.
+                  </p>
+                  <Link href="/data-sources">
+                    <Button className="h-10 px-5 bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2">
+                      Go to Data Sources to Feed Data <ArrowRight size={16} />
+                    </Button>
+                  </Link>
+                </div>
               ) : (
                 <div>
                   <CalendarPlus className="text-[#235b80] w-7 h-7 mb-3" />
-                  <h2 className="text-lg font-semibold">Ready to generate plan</h2>
+                  <h2 className="text-lg font-semibold">Ready to generate plan ({tasks.length} tasks)</h2>
                   <p className="text-sm text-slate-600 mt-2 mb-5 leading-relaxed">
                     Runs constraint-based block planning to co-utilize windows across Engineering, S&amp;T, and Traction.
                   </p>

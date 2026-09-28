@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { optimizationSteps, reoptimizationSteps } from '@/lib/mock-service';
 import { summarizeBlocks } from '@/lib/plan-summary';
 import { affectedTrainsByBlock, alternativeWindowsByBlock } from '@/data/affected-trains';
+import { ShadowBlockDiagram } from '@/components/visualizations/shadow-block-diagram';
 
 const deptColors: Record<Department, { bg: string; border: string; text: string }> = {
   Engineering: { bg: '#245F8E15', border: '#245F8E40', text: '#245F8E' },
@@ -84,6 +85,7 @@ export default function PlanPage() {
   const [selectedRejectReason, setSelectedRejectReason] = useState('');
   const [isReoptimizing, setIsReoptimizing] = useState(false);
   const [reoptStep, setReoptStep] = useState(-1);
+  const [showShadowExplainer, setShowShadowExplainer] = useState(false);
 
   // Edit drawer state
   const [isEditingBlock, setIsEditingBlock] = useState(false);
@@ -296,11 +298,27 @@ export default function PlanPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-8 gap-1.5 bg-white hover:bg-slate-50 border-slate-300 text-slate-700 font-semibold"
+              onClick={() => setShowShadowExplainer(!showShadowExplainer)}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              {showShadowExplainer ? 'Hide Shadow Block Guide' : 'What is Shadow Blocking?'}
+            </Button>
             <Badge className="text-xs bg-white text-slate-700 border border-slate-200">
               Demo plan
             </Badge>
           </div>
         </motion.div>
+
+        {/* Visual Shadow Block Explainer */}
+        {showShadowExplainer && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+            <ShadowBlockDiagram />
+          </motion.div>
+        )}
 
         {/* Approved Notification Card */}
         {isApproved && (
@@ -687,12 +705,37 @@ export default function PlanPage() {
                         </div>
                       </div>
 
-                      <div className="bg-rose-50/80 border border-rose-200 rounded p-2 text-xs">
-                        <div className="flex items-center justify-between text-rose-900 font-bold text-[11px] mb-0.5">
+                      <div className="bg-rose-50/80 border border-rose-200 rounded p-2 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between text-rose-900 font-bold text-[11px]">
                           <span>{us.reasonCode || 'NO_FEASIBLE_WINDOW'}</span>
                           <span className="text-[10px] font-medium text-rose-700 uppercase">Planner Action</span>
                         </div>
                         <p className="text-[11px] text-rose-800 leading-tight">{us.reason}</p>
+                        
+                        {/* Interactive Planner Decision Options */}
+                        <div className="pt-1.5 border-t border-rose-200/60 flex flex-wrap gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => toast.success(`COA Extension Requested: Forwarded request for +${requiredMin - largestMin}m buffer on ${task?.corridorName || 'corridor'} to Section Controller.`)}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded bg-white hover:bg-rose-100 text-rose-900 border border-rose-300 transition-colors shadow-2xs"
+                          >
+                            Request Window Extension
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toast.info(`Task Phased: Split ${task?.id || us.taskId} into 2 sub-phases of ${Math.ceil(requiredMin / 2)}m for progressive execution.`)}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 transition-colors shadow-2xs"
+                          >
+                            Split into 2 Phases
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toast.warning(`Deferred: ${task?.id || us.taskId} queued for upcoming Sunday 6-Hour Mega-Block.`)}
+                            className="text-[10px] font-medium px-2 py-0.5 rounded bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 transition-colors shadow-2xs"
+                          >
+                            Defer to Mega-Block
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
