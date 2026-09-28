@@ -15,7 +15,7 @@ import { MaintenanceTask, Department, PriorityBand } from '@/types/domain';
 import { formatDuration, getDueStatusLabel, getDueStatus } from '@/lib/format';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight, ClipboardList, Upload, Sparkles } from 'lucide-react';
+import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight, ClipboardList, Upload, Sparkles, ShieldCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -67,14 +67,41 @@ function TasksContent() {
     }
   }, [corridorParam]);
 
-  // Add Task Modal State
+  // Add Task Modal State with Multi-Factor Scoring
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDept, setNewDept] = useState<Department>('Engineering');
   const [newCorridor, setNewCorridor] = useState('C001');
   const [newDuration, setNewDuration] = useState('90');
-  const [newPriority, setNewPriority] = useState<PriorityBand>('High');
   const [newResource, setNewResource] = useState('Track Gang A');
+  const [safetyRating, setSafetyRating] = useState<number>(8); // 1-10 (35%)
+  const [criticalityRating, setCriticalityRating] = useState<number>(8); // 1-10 (25%)
+  const [urgencyRating, setUrgencyRating] = useState<number>(8); // 1-10 (25%)
+  const [availabilityRating, setAvailabilityRating] = useState<number>(7); // 1-10 (15%)
+
+  // Dynamically calculate composite priority score (0 - 100)
+  const calculatedScore = useMemo(() => {
+    return Math.min(
+      100,
+      Math.max(
+        10,
+        Math.round(
+          safetyRating * 3.5 +
+          criticalityRating * 2.5 +
+          urgencyRating * 2.5 +
+          availabilityRating * 1.5
+        )
+      )
+    );
+  }, [safetyRating, criticalityRating, urgencyRating, availabilityRating]);
+
+  // Derive priority band from calculated score
+  const calculatedBand: PriorityBand = useMemo(() => {
+    if (calculatedScore >= 85) return 'Critical';
+    if (calculatedScore >= 70) return 'High';
+    if (calculatedScore >= 50) return 'Medium';
+    return 'Low';
+  }, [calculatedScore]);
 
   const filtered = useMemo(() => {
     let result = [...tasks];
@@ -114,7 +141,6 @@ function TasksContent() {
     }
 
     const dur = parseInt(newDuration, 10) || 90;
-    const pScore = newPriority === 'Critical' ? 95 : newPriority === 'High' ? 80 : newPriority === 'Medium' ? 60 : 40;
     const prefix = newDept === 'Engineering' ? 'ENG' : newDept === 'Signal' ? 'SIG' : 'TRD';
     const randomNum = Math.floor(100 + Math.random() * 900);
     const newId = `${prefix}-USR-${randomNum}`;
@@ -127,20 +153,21 @@ function TasksContent() {
       corridorName: corridorMap[newCorridor] || 'Ahmedabad → Nadiad',
       title: newTitle.trim(),
       durationMin: dur,
-      priorityScore: pScore,
-      priorityBand: newPriority,
+      priorityScore: calculatedScore,
+      priorityBand: calculatedBand,
       status: 'PENDING',
       dueDate: '2026-09-30',
-      criticality: pScore >= 80 ? 9 : 6,
-      urgency: pScore >= 80 ? 9 : 6,
-      safetyImpact: pScore >= 80 ? 9 : 5,
-      availabilityImpact: 7,
-      requiredState: 'Track Possession',
+      criticality: criticalityRating,
+      urgency: urgencyRating,
+      safetyImpact: safetyRating,
+      availabilityImpact: availabilityRating,
+      requiredState: newDept === 'Traction' ? 'Power Block' : 'Track Possession',
       requiredResource: newResource,
-      notes: 'Custom task created by user in active workbank',
+      notes: `IR-PW Scored: Safety ${safetyRating}, Crit ${criticalityRating}, Urg ${urgencyRating}, Avail ${availabilityRating}`,
     };
 
     addTask(createdTask);
+    toast.success(`Task ${newId} created with calculated priority P${calculatedScore} (${calculatedBand})!`);
     setIsAddOpen(false);
     setNewTitle('');
     toast.success(`Task ${newId} added to active workbank! Run Build a Plan to schedule it.`);
@@ -425,28 +452,134 @@ function TasksContent() {
                 />
               </div>
               <div>
-                <label className="font-semibold text-slate-800 block mb-1">Priority Band</label>
-                <Select value={newPriority} onValueChange={(v) => setNewPriority(v as PriorityBand)}>
-                  <SelectTrigger className="text-xs h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Critical">Critical (P95)</SelectItem>
-                    <SelectItem value="High">High (P80)</SelectItem>
-                    <SelectItem value="Medium">Medium (P60)</SelectItem>
-                    <SelectItem value="Low">Low (P40)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <label className="font-semibold text-slate-800 block mb-1">Required Equipment / Gang</label>
+                <Input
+                  placeholder="e.g. Track Gang A, Tamping Machine, Signal Crew 1"
+                  value={newResource}
+                  onChange={(e) => setNewResource(e.target.value)}
+                  className="text-xs h-9"
+                />
               </div>
             </div>
-            <div>
-              <label className="font-semibold text-slate-800 block mb-1">Required Equipment / Gang</label>
-              <Input
-                placeholder="e.g. Track Gang A, Tamping Machine, Signal Crew 1"
-                value={newResource}
-                onChange={(e) => setNewResource(e.target.value)}
-                className="text-xs h-9"
-              />
+
+            {/* Indian Railways Multi-Factor Priority Scoring Engine */}
+            <div className="rounded-lg border border-sky-200 bg-sky-50/40 p-3 space-y-2.5">
+              <div className="flex items-center justify-between border-b border-sky-200/60 pb-1.5">
+                <span className="font-bold text-slate-900 flex items-center gap-1.5 text-xs">
+                  <ShieldCheck className="w-4 h-4 text-sky-700" />
+                  Multi-Factor Priority Scoring Engine
+                </span>
+                <span className="text-[10px] font-mono text-sky-800 font-semibold bg-sky-100 px-2 py-0.5 rounded">
+                  IR-PW / TMS Standard
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600">
+                Rate the 4 standard Indian Railways criteria (1 to 10). RailSync dynamically computes the objective solver priority score:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                {/* 1. Safety Impact */}
+                <div className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-slate-700 font-semibold">1. Safety Impact (35%)</span>
+                    <span className="font-bold font-mono text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                      {safetyRating} / 10
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={safetyRating}
+                    onChange={(e) => setSafetyRating(Number(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded appearance-none cursor-pointer accent-rose-600"
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">10 = Derailment / Major Fracture Risk</span>
+                </div>
+
+                {/* 2. Asset Criticality */}
+                <div className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-slate-700 font-semibold">2. Asset Criticality (25%)</span>
+                    <span className="font-bold font-mono text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                      {criticalityRating} / 10
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={criticalityRating}
+                    onChange={(e) => setCriticalityRating(Number(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded appearance-none cursor-pointer accent-sky-600"
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">10 = Mainline Bridge / EI Route Point</span>
+                </div>
+
+                {/* 3. Inspection Urgency */}
+                <div className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-slate-700 font-semibold">3. Inspection Urgency (25%)</span>
+                    <span className="font-bold font-mono text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                      {urgencyRating} / 10
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={urgencyRating}
+                    onChange={(e) => setUrgencyRating(Number(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded appearance-none cursor-pointer accent-amber-600"
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">10 = Statutory Inspection Overdue</span>
+                </div>
+
+                {/* 4. Availability Impact */}
+                <div className="bg-white p-2 rounded border border-slate-200 shadow-2xs">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-slate-700 font-semibold">4. Availability Impact (15%)</span>
+                    <span className="font-bold font-mono text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                      {availabilityRating} / 10
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={availabilityRating}
+                    onChange={(e) => setAvailabilityRating(Number(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded appearance-none cursor-pointer accent-teal-600"
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">10 = Imposes 30 km/h Caution Order</span>
+                </div>
+              </div>
+
+              {/* Dynamic Formula Result */}
+              <div className="bg-white p-2.5 rounded-lg border border-slate-300 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-600">Calculated Priority:</span>
+                    <span className="text-base font-extrabold font-mono text-slate-900">
+                      P{calculatedScore} / 100
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-bold"
+                      style={{
+                        color: priorityColors[calculatedBand],
+                        borderColor: `${priorityColors[calculatedBand]}50`,
+                        backgroundColor: `${priorityColors[calculatedBand]}15`,
+                      }}
+                    >
+                      {calculatedBand} Priority
+                    </Badge>
+                  </div>
+                  <p className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    Score = (3.5×{safetyRating}) + (2.5×{criticalityRating}) + (2.5×{urgencyRating}) + (1.5×{availabilityRating}) = {calculatedScore}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">

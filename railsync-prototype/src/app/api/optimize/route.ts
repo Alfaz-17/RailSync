@@ -15,8 +15,18 @@ export async function POST(req: NextRequest) {
 
     // 1. Attempt connection to Python OR-Tools FastAPI backend
     try {
+      const solverBaseUrl = (
+        process.env.SOLVER_URL ||
+        process.env.NEXT_PUBLIC_SOLVER_URL ||
+        'http://127.0.0.1:8787'
+      ).replace(/\/+$/, '');
+
+      const isLocal = solverBaseUrl.includes('127.0.0.1') || solverBaseUrl.includes('localhost');
+      const defaultTimeout = isLocal ? 3000 : 15000;
+      const timeoutMs = Number(process.env.SOLVER_TIMEOUT_MS) || defaultTimeout;
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       // Prepare payload for Python solver
       const pyTasks = tasks.map((t: any) => ({
@@ -61,7 +71,7 @@ export async function POST(req: NextRequest) {
         horizonLabel: '7-day',
       };
 
-      const pyRes = await fetch('http://127.0.0.1:8787/api/solve', {
+      const pyRes = await fetch(`${solverBaseUrl}/api/solve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pyPayload),
