@@ -1,0 +1,6 @@
+id,department,title,corridorId,durationMin,priorityScore,priorityBand,requiredResource,requiredState,dueDate,notes
+SIG-021,Signal,Point Machine Overhaul & Friction Clutch Test,C001,60,82,High,Signal Maintainer A,Traffic Block,2026-09-16,Point 102A motorized point machine calibration.
+SIG-022,Signal,Digital Axle Counter (MSDAC) Sensor Calibration,C001,90,91,Critical,Signal Crew 1,Traffic Block,2026-09-15,Track vacancy detection system testing.
+SIG-023,Signal,Solid State Electronic Interlocking (EI) Health Check,C001,45,74,High,Signal Inspector A,Traffic Block,2026-09-17,Diagnostic error log dump and standby CPU test.
+SIG-024,Signal,Track Circuit Insulated Rail Joint Inspection,C001,60,69,Medium,Signal Maintainer B,Traffic Block,2026-09-18,Glued joint impedance and bonding wire replacement.
+SIG-025,Signal,Color Light Signal Aspect & Focus Alignment,C001,45,60,Medium,Signal Maintainer A,Traffic Block,2026-09-19,Home and starter signal optical lens cleaning.

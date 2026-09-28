@@ -33,30 +33,49 @@ export default function AnalyticsPage() {
     };
   }, [baselineBlocks, tasks]);
 
-  const shownPlan = plan || normalPlan;
-  const suggested = useMemo(() => summarizeBlocks(shownPlan.blocks), [shownPlan.blocks]);
+  const hasPlan = Boolean(plan && plan.blocks && plan.blocks.length > 0);
+  const shownPlan = plan;
+  const suggested = useMemo(() => {
+    if (!shownPlan || !shownPlan.blocks) {
+      return {
+        blockCount: 0,
+        totalMinutes: 0,
+        criticalPlanned: 0,
+        criticalTotal: baseline.criticalTotal,
+        sharedBlocks: 0,
+        taskCount: 0,
+      };
+    }
+    return summarizeBlocks(shownPlan.blocks);
+  }, [shownPlan, baseline.criticalTotal]);
 
   const rows = [
-    { label: 'Separate blocks', before: baseline.blockCount, after: suggested.blockCount, meaning: 'Number of separate maintenance blocks requested vs bundled' },
-    { label: 'Block minutes', before: `${baseline.totalMinutes.toLocaleString()} min`, after: `${suggested.totalMinutes.toLocaleString()} min`, meaning: 'Total track closure minutes across corridor network' },
-    { label: 'Critical tasks covered', before: `${baseline.criticalPlanned} / ${baseline.criticalTotal}`, after: `${suggested.criticalPlanned} / ${suggested.criticalTotal}`, meaning: 'Urgent fracture repairs and relay inspections scheduled' },
-    { label: 'Coordinated blocks', before: baseline.sharedBlocks, after: suggested.sharedBlocks, meaning: 'Joint multi-department windows sharing single corridor block' },
-    { label: 'Unscheduled critical', before: Math.max(0, baseline.criticalTotal - baseline.criticalPlanned), after: Math.max(0, suggested.criticalTotal - suggested.criticalPlanned), meaning: 'Critical safety tasks left pending without a slot' },
-    { label: 'Independent rule violations', before: 'Not validated', after: `${shownPlan.metrics?.hardViolations ?? 0}`, meaning: 'Verified by decoupled constraint & safety rule engine' },
+    { label: 'Separate blocks', before: baseline.blockCount, after: hasPlan ? suggested.blockCount : '0 (Pending)', meaning: 'Number of separate maintenance blocks requested vs bundled' },
+    { label: 'Block minutes', before: `${baseline.totalMinutes.toLocaleString()} min`, after: hasPlan ? `${suggested.totalMinutes.toLocaleString()} min` : '0 min', meaning: 'Total track closure minutes across corridor network' },
+    { label: 'Critical tasks covered', before: `${baseline.criticalPlanned} / ${baseline.criticalTotal}`, after: hasPlan ? `${suggested.criticalPlanned} / ${suggested.criticalTotal}` : `0 / ${baseline.criticalTotal}`, meaning: 'Urgent fracture repairs and relay inspections scheduled' },
+    { label: 'Coordinated blocks', before: baseline.sharedBlocks, after: hasPlan ? suggested.sharedBlocks : 0, meaning: 'Joint multi-department windows sharing single corridor block' },
+    { label: 'Unscheduled critical', before: Math.max(0, baseline.criticalTotal - baseline.criticalPlanned), after: hasPlan ? Math.max(0, suggested.criticalTotal - suggested.criticalPlanned) : baseline.criticalTotal, meaning: 'Critical safety tasks left pending without a slot' },
+    { label: 'Independent rule violations', before: 'Not validated', after: hasPlan ? `${shownPlan?.metrics?.hardViolations ?? 0}` : 'Pending Solve', meaning: 'Verified by decoupled constraint & safety rule engine' },
   ];
 
-  const corridorIds = useMemo(() => [...new Set([...baselineBlocks.map((b) => b.corridorId), ...shownPlan.blocks.map((b) => b.corridorId)])], [baselineBlocks, shownPlan.blocks]);
+  const corridorIds = useMemo(() => {
+    const ids = new Set(baselineBlocks.map((b) => b.corridorId));
+    if (shownPlan && shownPlan.blocks) {
+      shownPlan.blocks.forEach((b) => ids.add(b.corridorId));
+    }
+    return [...ids];
+  }, [baselineBlocks, shownPlan]);
 
   const corridors = useMemo(() => corridorIds.map((id) => {
     const current = baselineBlocks.filter((b) => b.corridorId === id);
-    const proposed = shownPlan.blocks.filter((b) => b.corridorId === id);
+    const proposed = (shownPlan?.blocks || []).filter((b) => b.corridorId === id);
     return {
       id,
       name: current[0]?.corridorName || proposed[0]?.corridorName || id,
       before: current.reduce((sum, b) => sum + b.durationMin, 0),
       after: proposed.reduce((sum, b) => sum + b.durationMin, 0),
     };
-  }), [corridorIds, baselineBlocks, shownPlan.blocks]);
+  }), [corridorIds, baselineBlocks, shownPlan]);
 
   const maxMinutes = Math.max(1, ...corridors.flatMap((c) => [c.before, c.after]));
 

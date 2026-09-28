@@ -1,0 +1,6 @@
+id,department,title,corridorId,durationMin,priorityScore,priorityBand,requiredResource,requiredState,dueDate,notes
+TRD-008,Traction,25kV Contact Wire Height & Stagger Measurement,C001,90,78,High,OHE Gang A,Power Block,2026-09-16,Pantograph contact wire profile check.
+TRD-009,Traction,Section Insulator & Neutral Section Inspection,C001,75,88,Critical,OHE Gang B,Power Block,2026-09-15,Traction feeder overlap insulation test.
+TRD-010,Traction,Tower Wagon Cantilever Bracket Adjustment,C001,120,80,High,Tower Wagon 1,Power Block,2026-09-17,Portal mast bracket re-torque and pin check.
+TRD-011,Traction,OHE Flexible Dropper & Jumper Wire Renewal,C001,60,65,Medium,OHE Gang A,Power Block,2026-09-18,Replacing corroded copper jumper connections.
+TRD-012,Traction,Sub-Station Feeder Isolator Switch Servicing,C001,90,72,High,Traction Engineer,Power Block,2026-09-19,Motorized isolator remote operation check.

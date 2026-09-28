@@ -17,26 +17,25 @@ export function KpiImpactVisual() {
       return plan.metrics;
     }
     const critTotal = tasks.filter((t) => t.priorityBand === 'Critical').length;
-    const estBlocks = Math.max(1, Math.round(baselineBlocks.length * 0.65));
-    const estMinutes = Math.round(baselineMetrics.totalBlockMinutes * 0.8);
     return {
-      totalBlocks: estBlocks,
-      totalBlockMinutes: estMinutes,
-      criticalTasksCovered: critTotal,
+      totalBlocks: 0,
+      totalBlockMinutes: 0,
+      criticalTasksCovered: 0,
       totalCriticalTasks: critTotal,
-      coordinatedMultiDeptBlocks: Math.max(1, Math.round(estBlocks * 0.6)),
-      unscheduledCritical: 0,
+      coordinatedMultiDeptBlocks: 0,
+      unscheduledCritical: critTotal,
       hardViolations: 0,
     };
-  }, [plan, tasks, baselineBlocks.length, baselineMetrics.totalBlockMinutes]);
+  }, [plan, tasks]);
 
-  const diffBlocks = suggestedMetrics.totalBlocks - baselineMetrics.totalBlocks;
-  const blockReductionPct = baselineMetrics.totalBlocks > 0
+  const hasPlan = Boolean(plan && plan.blocks && plan.blocks.length > 0);
+  const diffBlocks = hasPlan ? suggestedMetrics.totalBlocks - baselineMetrics.totalBlocks : 0;
+  const blockReductionPct = (hasPlan && baselineMetrics.totalBlocks > 0)
     ? Math.round((Math.abs(diffBlocks) / baselineMetrics.totalBlocks) * 100)
     : 0;
 
-  const diffMinutes = suggestedMetrics.totalBlockMinutes - baselineMetrics.totalBlockMinutes;
-  const minReductionPct = baselineMetrics.totalBlockMinutes > 0
+  const diffMinutes = hasPlan ? suggestedMetrics.totalBlockMinutes - baselineMetrics.totalBlockMinutes : 0;
+  const minReductionPct = (hasPlan && baselineMetrics.totalBlockMinutes > 0)
     ? Math.round((Math.abs(diffMinutes) / baselineMetrics.totalBlockMinutes) * 100)
     : 0;
 

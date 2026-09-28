@@ -1,0 +1,6 @@
+id,corridorId,start,end,durationMin,dayOfWeek,availability,notes
+BW-001,C001,01:00,03:00,120,Monday,Available,Primary night maintenance gap between Mumbai mail trains.
+BW-002,C001,03:00,04:30,90,Monday,Available,Secondary early morning freight buffer slot.
+BW-003,C001,22:00,23:30,90,Monday,Restricted,Late evening passenger traffic peak window.
+BW-004,C001,04:30,06:30,120,Monday,Available,Alternative morning block before commuter peak.
+BW-005,C001,11:30,13:00,90,Tuesday,Available,Midday passenger train headway window.

@@ -35,7 +35,7 @@ interface PrototypeState {
   addTask: (task: MaintenanceTask) => void;
   deleteTask: (taskId: string) => void;
   importDataset: (newTasks: MaintenanceTask[], newWindows?: COAWindow[]) => void;
-  resetTasks: () => void;
+  clearWorkbank: () => void;
   loadGoldenScenario: () => void;
   loadFullDivisionScenario: () => void;
   runOptimization: () => Promise<void>;
@@ -110,11 +110,26 @@ export const usePrototypeStore = create<PrototypeState>()(
         });
       },
 
-      resetTasks: () => {
-        const mode = get().scenarioMode;
+      clearWorkbank: () => {
         set({
-          tasks: mode === 'GOLDEN' ? goldenTasks : defaultTasks,
-          windows: mode === 'GOLDEN' ? goldenWindows : defaultWindows,
+          tasks: [],
+          plan: null,
+          planStatus: 'BASELINE',
+          scenario: 'NORMAL',
+          coaChanged: false,
+          approvedAt: null,
+          rejectedAt: null,
+          rejectReason: null,
+          validationErrors: [],
+          auditEvents: [
+            {
+              id: `EVT-${Date.now()}`,
+              timestamp: new Date().toISOString(),
+              action: 'OPTIMIZED',
+              actor: 'Workbank Controller',
+              details: 'Workbank cleared to empty state (0 tasks). Ready for fresh dataset import.',
+            },
+          ],
         });
       },
 

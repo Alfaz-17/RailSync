@@ -11,7 +11,7 @@ import { MaintenanceTask, COAWindow } from '@/types/domain';
 import Link from 'next/link';
 import {
   Wrench, Radio, Zap, Clock, Package, CalendarCheck, ShieldCheck, Users, CheckCircle2, Eye,
-  Upload, FileText, RotateCcw, Sparkles, ArrowRight, Download, FileSpreadsheet,
+  Upload, FileText, RotateCcw, Sparkles, ArrowRight, Download, FileSpreadsheet, Trash2,
 } from 'lucide-react';
 import { parseTasksCsv, parseWindowsCsv, getSampleTasksCsv, getSampleWindowsCsv } from '@/lib/csv-parser';
 import { motion } from 'framer-motion';
@@ -170,8 +170,66 @@ const sampleBenchmarkDataset: { tasks: MaintenanceTask[]; windows: COAWindow[] }
   ],
 };
 
+const DEMO_DATASETS = [
+  {
+    id: 'DS-01',
+    fileName: '01_engineering_track_tasks.csv',
+    title: 'TMS: Track Engineering Workbank',
+    source: 'TMS (Track Management System)',
+    department: 'Engineering',
+    count: '5 Tasks',
+    description: 'Rail fracture (Critical 95), heavy tamping (82), USFD flaw detection, turnout renewal, shoulder BCM cleaning.',
+    downloadPath: '/datasets/01_engineering_track_tasks.csv',
+    color: '#1473E6',
+  },
+  {
+    id: 'DS-02',
+    fileName: '02_signal_telecom_tasks.csv',
+    title: 'SMMS: Signal & Telecom Inspection',
+    source: 'SMMS (Signal Maintenance System)',
+    department: 'Signal',
+    count: '5 Tasks',
+    description: 'Point machine clutch test, MSDAC digital axle counters (Critical 91), electronic interlocking health check, track circuits.',
+    downloadPath: '/datasets/02_signal_telecom_tasks.csv',
+    color: '#0F8B7E',
+  },
+  {
+    id: 'DS-03',
+    fileName: '03_traction_ohe_tasks.csv',
+    title: 'TDMS: 25kV OHE Traction Maintenance',
+    source: 'TDMS (Traction Distribution System)',
+    department: 'Traction',
+    count: '5 Tasks',
+    description: 'Contact wire height & stagger (78), neutral section insulator (Critical 88), tower wagon cantilever bracket work.',
+    downloadPath: '/datasets/03_traction_ohe_tasks.csv',
+    color: '#C28012',
+  },
+  {
+    id: 'DS-04',
+    fileName: '04_train_timetable_windows.csv',
+    title: 'COA: Candidate Train Gap Windows',
+    source: 'COA (Control Office Application)',
+    department: 'Operations',
+    count: '5 Windows',
+    description: 'Traffic-free block windows on Ahmedabad → Nadiad (C001) between passenger runs (01:00-03:00, 03:00-04:30, 04:30-06:30).',
+    downloadPath: '/datasets/04_train_timetable_windows.csv',
+    color: '#6366F1',
+  },
+  {
+    id: 'DS-05',
+    fileName: '05_monsoon_emergency_workbank.json',
+    title: 'Emergency: Monsoon Multi-Dept Package',
+    source: 'Integrated Emergency Taskforce',
+    department: 'Multi-Department',
+    count: '5 Tasks + 3 Windows',
+    description: 'Emergency drainage desilting (94), washout packing (96), submerged axle counters, and lightning arrestors.',
+    downloadPath: '/datasets/05_monsoon_emergency_workbank.json',
+    color: '#D94B45',
+  },
+];
+
 export default function DataSourcesPage() {
-  const { tasks, windows, importDataset, resetTasks, loadGoldenScenario } = usePrototypeStore();
+  const { tasks, windows, importDataset, clearWorkbank, loadGoldenScenario } = usePrototypeStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -185,9 +243,15 @@ export default function DataSourcesPage() {
         const isCsv = file.name.endsWith('.csv') || (text.includes(',') && !text.trim().startsWith('{'));
 
         if (isCsv) {
+          if (file.name.includes('window')) {
+            const importedWindows = parseWindowsCsv(text);
+            importDataset(tasks, importedWindows);
+            toast.success(`Windows CSV imported! Loaded ${importedWindows.length} windows into active timetable.`);
+            return;
+          }
           const importedTasks = parseTasksCsv(text);
           if (importedTasks.length === 0) {
-            toast.error('Invalid CSV: Could not parse tasks. Please use standard headers (id, department, title, durationMin, priorityScore).');
+            toast.error('Invalid CSV: Could not parse tasks. Please check column headers.');
             return;
           }
           importDataset(importedTasks);
@@ -214,6 +278,30 @@ export default function DataSourcesPage() {
     reader.readAsText(file);
   }
 
+  async function handleLoadDatasetFile(dataset: typeof DEMO_DATASETS[0]) {
+    try {
+      const res = await fetch(dataset.downloadPath);
+      if (!res.ok) throw new Error('Could not fetch file');
+      const text = await res.text();
+
+      if (dataset.fileName.endsWith('.json')) {
+        const json = JSON.parse(text);
+        importDataset(json.tasks || [], json.windows || []);
+        toast.success(`Loaded ${dataset.title} (${json.tasks?.length || 0} tasks & ${json.windows?.length || 0} windows)!`);
+      } else if (dataset.fileName.includes('windows')) {
+        const importedWindows = parseWindowsCsv(text);
+        importDataset(tasks, importedWindows);
+        toast.success(`Loaded ${dataset.title} (${importedWindows.length} windows)!`);
+      } else {
+        const parsedTasks = parseTasksCsv(text);
+        importDataset(parsedTasks);
+        toast.success(`Loaded ${dataset.title} (${parsedTasks.length} tasks)!`);
+      }
+    } catch (err) {
+      toast.error(`Error loading dataset: ${String(err)}`);
+    }
+  }
+
   function handleDownloadCsvTemplate() {
     const csvContent = getSampleTasksCsv();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -227,9 +315,31 @@ export default function DataSourcesPage() {
     toast.success('Downloaded railsync-tasks-template.csv!');
   }
 
-  function handleLoadBenchmark() {
-    importDataset(sampleBenchmarkDataset.tasks, sampleBenchmarkDataset.windows);
-    toast.success('Loaded Compact Benchmark Dataset (5 tasks, 3 windows)!');
+  async function handleDownloadDataset(ds: typeof DEMO_DATASETS[0]) {
+    try {
+      const res = await fetch(ds.downloadPath);
+      if (!res.ok) throw new Error('File not found');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = ds.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${ds.fileName} to your computer!`);
+    } catch (err) {
+      toast.error(`Download failed: ${String(err)}`);
+    }
+  }
+
+  async function handleDownloadAllDatasets() {
+    toast.info('Downloading all 5 dataset files...');
+    for (const ds of DEMO_DATASETS) {
+      await handleDownloadDataset(ds);
+      await new Promise((r) => setTimeout(r, 250));
+    }
   }
 
   function handleResetDefault() {
@@ -299,10 +409,14 @@ export default function DataSourcesPage() {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-teal-300 text-teal-900 hover:bg-teal-100 text-xs gap-1.5 h-9"
-                onClick={handleLoadBenchmark}
+                className="border-rose-300 text-rose-700 hover:bg-rose-50 text-xs gap-1.5 h-9"
+                onClick={() => {
+                  clearWorkbank();
+                  toast.info('Workbank cleared to 0 tasks! You can now import fresh demo files.');
+                }}
+                title="Empty the workbank so you can demonstrate importing files from scratch"
               >
-                <Sparkles className="w-3.5 h-3.5 text-teal-700" /> Benchmark (5 Tasks)
+                <Trash2 className="w-3.5 h-3.5 text-rose-600" /> Clear Workbank (0 Tasks)
               </Button>
               <Button
                 size="sm"
@@ -323,6 +437,91 @@ export default function DataSourcesPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* 5 Official Sample Dataset Files Gallery */}
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-sky-700" />
+                5 Official Demo Datasets (Ready to Import or Download)
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Download these CSV/JSON files to your desktop for live presentation upload, or click &ldquo;Load Directly&rdquo; to test OR-Tools solver immediately:
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs font-semibold gap-1.5 h-8 border-sky-400 text-sky-900 bg-sky-50 hover:bg-sky-100"
+                onClick={handleDownloadAllDatasets}
+              >
+                <Download className="w-3.5 h-3.5" /> Download All 5 Files
+              </Button>
+              <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+                Folder: sample_datasets/
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
+            {DEMO_DATASETS.map((ds) => (
+              <Card key={ds.id} className="border-slate-200 hover:border-slate-300 transition-all shadow-xs flex flex-col justify-between">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge
+                      variant="outline"
+                      className="text-[11px] font-semibold"
+                      style={{ color: ds.color, borderColor: `${ds.color}40`, backgroundColor: `${ds.color}10` }}
+                    >
+                      {ds.source}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] font-mono font-bold bg-slate-50 text-slate-700">
+                      {ds.count}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-sm font-bold text-slate-900 mt-2">
+                    {ds.title}
+                  </CardTitle>
+                  <p className="text-[11px] font-mono text-slate-500">{ds.fileName}</p>
+                </CardHeader>
+                <CardContent className="space-y-3 pt-0">
+                  <p className="text-xs text-slate-600 leading-relaxed min-h-[36px]">
+                    {ds.description}
+                  </p>
+                  <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 text-xs gap-1.5 h-8 border-slate-300 text-slate-700 hover:bg-slate-100"
+                      onClick={() => handleDownloadDataset(ds)}
+                    >
+                      <Download className="w-3 h-3 text-slate-600" /> Download
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5 h-8 bg-sky-700 hover:bg-sky-800 text-white font-semibold"
+                      onClick={() => handleLoadDatasetFile(ds)}
+                    >
+                      <Sparkles className="w-3 h-3" /> Load Directly
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Source Cards Heading */}
+        <div className="pt-2">
+          <h3 className="text-base font-bold text-slate-900 tracking-tight mb-1">
+            Enterprise CRIS Adapters (8 Integrated Systems)
+          </h3>
+          <p className="text-xs text-slate-600 mb-3">
+            Simulated connector interfaces representing production Indian Railways systems (TMS, SMMS, TDMS, COA, CMS, FOIS).
+          </p>
+        </div>
 
         {/* Source Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

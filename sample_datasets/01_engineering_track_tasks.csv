@@ -1,0 +1,6 @@
+id,department,title,corridorId,durationMin,priorityScore,priorityBand,requiredResource,requiredState,dueDate,notes
+ENG-101,Engineering,Emergency Rail Fracture Repair,C001,120,95,Critical,Track Gang A,Track Possession,2026-09-15,Rail fracture detected at km 14.2 on UP main line.
+ENG-102,Engineering,Heavy Ballast Tamping (08-32 Machine),C001,150,82,High,Tamping Machine,Track Possession,2026-09-16,Track geometry correction post-monsoon.
+ENG-103,Engineering,Ultrasonic Rail Flaw Detection (USFD),C001,90,78,High,USFD Car,Track Possession,2026-09-17,Routine ultrasonic testing between Ahmedabad and Nadiad.
+ENG-104,Engineering,Turnout Sleeper Renewal,C001,180,68,Medium,Track Gang B,Track Possession,2026-09-18,Point No 104 timber to PSC sleeper renewal.
+ENG-105,Engineering,Shoulder Ballast Cleaning (BCM),C001,210,55,Medium,BCM Machine,Track Possession,2026-09-19,Deep screening of shoulder ballast for drainage.
