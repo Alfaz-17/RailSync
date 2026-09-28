@@ -15,7 +15,7 @@ import { MaintenanceTask, Department, PriorityBand } from '@/types/domain';
 import { formatDuration, getDueStatusLabel, getDueStatus } from '@/lib/format';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight, ClipboardList, Upload } from 'lucide-react';
+import { Search, ArrowUpDown, Info, Plus, Trash2, ArrowRight, ClipboardList, Upload, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ const corridorMap: Record<string, string> = {
 };
 
 function TasksContent() {
-  const { tasks, addTask, deleteTask } = usePrototypeStore();
+  const { tasks, addTask, deleteTask, loadGoldenScenario } = usePrototypeStore();
   const searchParams = useSearchParams();
   const corridorParam = searchParams.get('corridor');
 
@@ -159,6 +159,18 @@ function TasksContent() {
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs font-semibold">{tasks.length} tasks loaded</Badge>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-amber-300 text-amber-900 bg-amber-50/80 hover:bg-amber-100 gap-1.5 h-9 text-xs font-medium"
+              onClick={() => {
+                loadGoldenScenario();
+                toast.success('Loaded 4-Task Golden Demo (C001 Corridor)!');
+              }}
+              title="Loads the 4-task Golden Scenario for the 90-second demo"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" /> Golden Demo (4 Tasks)
+            </Button>
             <Button
               size="sm"
               className="bg-[#235b80] hover:bg-[#1d4e70] text-white gap-1.5 h-9 text-xs font-medium"

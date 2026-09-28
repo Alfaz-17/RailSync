@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { usePrototypeStore } from '@/store/prototype-store';
 import { optimizationSteps } from '@/lib/mock-service';
-import { ClipboardList, CalendarDays, Users, ShieldCheck, CheckCircle2, ArrowRight, Loader2, CalendarPlus, ChevronDown, ChevronUp, Network } from 'lucide-react';
+import { ClipboardList, CalendarDays, Users, ShieldCheck, CheckCircle2, ArrowRight, Loader2, CalendarPlus, ChevronDown, ChevronUp, Network, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import { PipelineArchitectureDiagram } from '@/components/visualizations/pipelin
 
 export default function OptimizePage() {
   const router = useRouter();
-  const { tasks, windows, planStatus, runOptimization } = usePrototypeStore();
+  const { tasks, windows, planStatus, runOptimization, loadGoldenScenario } = usePrototypeStore();
   const [isRunning, setIsRunning] = useState(false);
   const [currentStep, setCurrentStep] = useState(-1);
   const [showArchitecture, setShowArchitecture] = useState(false);
@@ -152,13 +152,24 @@ export default function OptimizePage() {
                   <ClipboardList className="text-slate-400 w-7 h-7 mb-3" />
                   <h2 className="text-lg font-semibold text-slate-900">Workbank is Empty (0 Tasks)</h2>
                   <p className="text-sm text-slate-600 mt-2 mb-5 leading-relaxed">
-                    No maintenance requirements have been ingested into RailSync yet. First feed data by uploading CSV/JSON files or selecting one of the 5 operational scenarios on the Data Sources page.
+                    No maintenance requirements have been ingested into RailSync yet. First feed data by uploading CSV/JSON files or load the 4-task Golden Scenario for a quick demo.
                   </p>
-                  <Link href="/data-sources">
-                    <Button className="h-10 px-5 bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2">
-                      Go to Data Sources to Feed Data <ArrowRight size={16} />
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Link href="/data-sources">
+                      <Button className="h-10 px-5 bg-[#235b80] hover:bg-[#1d4e70] text-white gap-2">
+                        Go to Data Sources to Feed Data <ArrowRight size={16} />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      className="h-10 px-4 border-amber-300 text-amber-900 bg-amber-50 hover:bg-amber-100 gap-2 text-xs font-semibold"
+                      onClick={() => {
+                        loadGoldenScenario();
+                      }}
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-600" /> Quick-Load Golden Demo (4 Tasks)
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               ) : (
                 <div>
